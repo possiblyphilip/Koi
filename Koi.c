@@ -40,9 +40,9 @@ typedef struct
 static void query (void);
 static void run (const guchar *name,  int nparams, const GimpParam  *param,  int *nreturn_vals, GimpParam **return_vals);
 
-static void blur (GimpDrawable  *drawable, GimpPreview  *preview);
-static void * blur_job(void *pArg);
-static gboolean blur_dialog (GimpDrawable *drawable);
+static void koi (GimpDrawable  *drawable, GimpPreview  *preview);
+static void * find_blur_job(void *pArg);
+static gboolean koi_dialog (GimpDrawable *drawable);
 
 void free_pixel_array(guchar ***array, int width, int height, int depth);
 void allocate_pixel_array(guchar ****array, int width, int height, int depth);
@@ -130,7 +130,7 @@ static void run (const guchar *name, int nparams, const GimpParam *param,  int *
 	gimp_get_data ("koi", &bvals);
 
 	/* Display the dialog */
-	if (! blur_dialog (drawable))
+	if (! koi_dialog (drawable))
 	{
 	    g_message("could not open dialog\n");
 	    return;
@@ -153,7 +153,7 @@ static void run (const guchar *name, int nparams, const GimpParam *param,  int *
 	break;
     }
 
-    blur (drawable, NULL);
+    koi (drawable, NULL);
 
     gimp_displays_flush ();
     gimp_drawable_detach (drawable);
@@ -165,7 +165,7 @@ static void run (const guchar *name, int nparams, const GimpParam *param,  int *
     return;
 }
 
-static void blur (GimpDrawable *drawable, GimpPreview  *preview)
+static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 {
     GimpRunMode mode = GIMP_RUN_NONINTERACTIVE;
     int          row, col, channel, channels;
@@ -184,7 +184,8 @@ static void blur (GimpDrawable *drawable, GimpPreview  *preview)
     guchar ***in_array;
     guchar ***out_array;
 
-    JOB_ARG blur_job_args[4];
+    JOB_ARG job_args[4];
+
 
 
 
@@ -210,8 +211,11 @@ static void blur (GimpDrawable *drawable, GimpPreview  *preview)
 
 	width = x2 - start_colum;
 	height = y2 - start_row;
+	gimp_run_procedure("gimp-desaturate",&num_return_vals, GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_END);
 
-//		g_message("not preview\n");
+	gimp_run_procedure("plug-in-edge",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_FLOAT, 9.99, GIMP_PDB_INT32, 2, GIMP_PDB_INT32, 5, GIMP_PDB_END);
+
+//	gimp_run_procedure("plug-in-sharpen",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_INT32, 99, GIMP_PDB_END);
     }
 
     channels = gimp_drawable_bpp (drawable->drawable_id);
@@ -225,23 +229,19 @@ static void blur (GimpDrawable *drawable, GimpPreview  *preview)
    * gimp_drawable_merge_shadow() */
     gimp_pixel_rgn_init (&rgn_in, drawable, start_colum, start_row, width, height, FALSE, FALSE);
     gimp_pixel_rgn_init (&rgn_out, drawable,  start_colum, start_row, width, height, preview == NULL, TRUE);
-//	gimp_pixel_rgn_init (&rgn_out, drawable,  start_colum, start_row, width, height, TRUE, TRUE);
 
     if(width < 10 || height < 10)
     {
-//	g_message("height or width was too small %d %d\n", width, height);
+//i need to do something smarter here
+//basically im just bailing out because the image data isnt worth looking at
 	return;
     }
-
-//    g_message("height width %d %d\n", width, height);
 
 //make an array to hold all the pixels
     allocate_pixel_array(&in_array,width, height, 4);
     allocate_pixel_array(&out_array,width, height, 4);
 
-    //   g_message("in array %p\n", in_array);
-
-    //dump the gimp image data into my own array for processing
+//dump the gimp image data into my own array for processing
     if (preview)
     {
 
@@ -249,20 +249,13 @@ static void blur (GimpDrawable *drawable, GimpPreview  *preview)
 	{
 	    for (col = 0; col < width; col++)
 	    {
-//		gimp_pixel_rgn_get_pixel (&rgn_in, pixel, MAX (col - 1, start_colum+col), MAX (row - 1, start_row+row));
 		gimp_pixel_rgn_get_pixel (&rgn_in, pixel, start_colum+col,start_row+row);
 
 		for(channel = 0; channel < 4; channel++)
 		{
 		    in_array[col][row][channel] = pixel[channel];
-		    //		in_array[col][row] = pixel;
 		}
 	    }
-
-	    //	if (row % 10 == 0)
-	    //	{
-	    //	    gimp_progress_update ((gdouble) (row - start_row) / (gdouble) (x2 - start_colum));
-	    //	}
 	}
     }
     else
@@ -281,61 +274,50 @@ static void blur (GimpDrawable *drawable, GimpPreview  *preview)
 	}
     }
 
-
+//making sure i have the pointer hooked up to each copy of my  job arguments
     for(ii = 0; ii < threads; ii++)
     {
-	blur_job_args[ii].array_in = in_array;
-	blur_job_args[ii].array_out = out_array;
+	job_args[ii].array_in = in_array;
+	job_args[ii].array_out = out_array;
     }
 
-//    g_message("%d pixel\n",blur_job_args.array_in[5][5][1]);
-//    g_message("%d pixel\n",blur_job_args.array_out[5][5][1]);
 
-
-
-    //cut up and farm out the image job
+//cut up and farm out the image job
+//ill only kick off one thred when its the preview for now
     if(preview)
     {
-//    g_message("start row %d start col %d width %d height %d\n", start_row, start_colum, width, height);
-//	blur_job_args.start_colum = start_colum;
-//	blur_job_args.start_row = start_row;
-	blur_job_args[0].start_colum = 0;
-	blur_job_args[0].start_row = 0;
-	blur_job_args[0].width = width;
-	blur_job_args[0].height = height;
+	job_args[0].start_colum = 0;
+	job_args[0].start_row = 0;
+	job_args[0].width = width;
+	job_args[0].height = height;
 
-	rc[0] = pthread_create((pthread_t*) &thread_id[0], NULL, blur_job, (void*)&blur_job_args[0]);
+	rc[0] = pthread_create((pthread_t*) &thread_id[0], NULL, find_blur_job, (void*)&job_args[0]);
 	if (rc[0] != 0)
 	{
-	    //something bad happened
+//something bad happened
 	     g_message("preview thread failed\n");
 	}
-//	    g_message("preview thread\n");
     }
     else
     {
-//	    g_message("start row %d start col %d width %d height %d\n", start_row, start_colum, width, height);
 	for(ii = 0; ii < threads; ii++)
 	{
-	    blur_job_args[ii].start_colum = (width*ii) / threads;
-	    blur_job_args[ii].start_row = 0;
-	    blur_job_args[ii].width = (width / threads);
-	    blur_job_args[ii].height = height;
+	    job_args[ii].start_colum = (width*ii) / threads;
+	    job_args[ii].start_row = 0;
+	    job_args[ii].width = (width / threads);
+	    job_args[ii].height = height;
 
-	    rc[ii] = pthread_create((pthread_t*) &thread_id[ii], NULL, blur_job, (void*)&blur_job_args[ii]);
+	    rc[ii] = pthread_create((pthread_t*) &thread_id[ii], NULL, find_blur_job, (void*)&job_args[ii]);
 	    if (rc[ii] != 0)
 	    {
 		//something bad happened
+		g_message("preview worker failed\n");
 	    }
 	}
- //   g_message("height width %d %d\n", width, height);
-//	g_message("not preview\n");
     }
 
-//g_message("height width %d %d\n", width, height);
 
-    //hang out and wait till all the threads are done
-
+//hang out and wait till all the threads are done
     for(ii = 0; ii < threads; ii++)
     {
 	rc[ii] = pthread_join(thread_id[ii], NULL);
@@ -346,16 +328,13 @@ static void blur (GimpDrawable *drawable, GimpPreview  *preview)
 	}
     }
 
-    //g_message("join done");
-
-    // write the array back to the out image here
+// write the array back to the out image here
     if(preview)
     {
 	for (row = 0; row < height; row++)
 	{
 	    for (col = 0; col < width; col++)
 	    {
-		//	    g_message("%d\n", out_array[col][row][0]);
 		gimp_pixel_rgn_set_pixel (&rgn_out, out_array[col][row],  start_colum+col, start_row+row);
 	    }
 	}
@@ -366,33 +345,16 @@ static void blur (GimpDrawable *drawable, GimpPreview  *preview)
 	{
 	    for (col = 0; col < width; col++)
 	    {
-		//	    g_message("%d\n", out_array[col][row][0]);
 		gimp_pixel_rgn_set_pixel (&rgn_out, out_array[col][row],  col, row);
 	    }
 	}
-	    g_message("writing the array back start row %d start col %d width %d height %d\n", start_row, start_colum, width, height);
-
-	    g_message("pix val = %d",out_array[1][2][3]);
-
     }
 
-    //#################################3 free the array memory
 
-//g_message("height or width %d %d\n", width, height);
 
-//g_message("going to free in array %p\n", in_array);
-
+//#################################3 free the array memory
     free_pixel_array(in_array,width, height, 4);
     free_pixel_array(out_array,width, height, 4);
-
-//    g_message("freed array\n", width, height);
-
-//    gimp_desaturate_full(drawable->drawable_id,0);
-
-
-//    gimp_run_plug_in("plug-in-sharpen",0, rgn_out, drawable->drawable_id, 90);
-
-//    plug_in_sharpen(0, rgn_out, drawable->drawable_id, 90);
 
     /*  Update the modified region */
     if (preview)
@@ -401,60 +363,88 @@ static void blur (GimpDrawable *drawable, GimpPreview  *preview)
     }
     else
     {
-	gimp_run_procedure("plug-in-sharpen",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_INT32, 90, GIMP_PDB_END);
 
-//	result = gimp_run_procedure("plug-in-gauss-iir2", &num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, image_id,  GIMP_PDB_DRAWABLE, new_layer,    GIMP_PDB_FLOAT, sketch_params.horizontal,  GIMP_PDB_FLOAT, sketch_params.vertical, GIMP_PDB_END);
 
 	gimp_drawable_flush (drawable);
 	gimp_drawable_merge_shadow (drawable->drawable_id, TRUE);
 	gimp_drawable_update (drawable->drawable_id, start_colum, start_row, width, height);
     }
-
-//    g_message("flushed image");
-
 }
 
   //################################### blur job #######################3
-static void * blur_job(void *pArg)
+static void * find_blur_job(void *pArg)
 {
 
+int size = 20;
 
-    /*
-     * get the argument passed in, and set our local variables
-     */
-    JOB_ARG* blur_job_args = (JOB_ARG*)pArg;
+guchar slider[21];
+int ii;
+int counter = 0;
+guchar temp;
 
-    int row, col, irow, channel;
 
-//    g_message("array out %p\n",blur_job_args->array_out);
+//get the argument passed in, and set our local variables
+    JOB_ARG* job_args = (JOB_ARG*)pArg;
 
- //   g_message("used array %p\n", blur_job_args->array_in);
- //   row = blur_job_args->start_row;
-    for (row = 0; row < blur_job_args->height ; row++)
+//set my slider to zero
+    for(ii = 0; ii < size; ii++)
     {
-	for (col = blur_job_args->start_colum; col < blur_job_args->start_colum+blur_job_args->width; col++)
+	slider[ii] = 0;
+    }
+
+    int row, col, channel;
+
+    for (row = 0; row < job_args->height ; row++)
+    {
+	for (col = job_args->start_colum; col < job_args->start_colum+job_args->width; col++)
 	{
-	    for(channel = 0; channel < 4; channel++)
-	    {
-		if(blur_job_args->array_in[col][row][channel] > 200)
+
+
+//set the current element in the slider to our newest pixel value
+		slider[counter] = job_args->array_in[col][row][0];
+		temp = 0;
+//look through the slider to see if we have any bright spots
+		for(ii = 0; ii < size; ii++)
 		{
-		   blur_job_args->array_out[col][row][channel] = blur_job_args->array_in[col][row][channel];
+		    if(slider[ii] > temp)
+		    {
+			temp = slider[counter];
+		    }
+		}
+//set the color to red because its been messed with
+		if(temp < 70)
+		{
+		    job_args->array_out[col][row][0] = 255;
+		    job_args->array_out[col][row][1] = 0;
+		    job_args->array_out[col][row][2] = 0;
 		}
 		else
 		{
-		    blur_job_args->array_out[col][row][channel] = 30*channel;
+		    job_args->array_out[col][row][0] = 80;
+		    job_args->array_out[col][row][1] = 190;
+		    job_args->array_out[col][row][2] = 70;
 		}
+
+
+//this will reset my slider counter so i dont have to make a queue or anything slow like that
+	    counter++;
+	    if(counter > size)
+	    {
+		counter = 0;
 	    }
+//	    counter%=size;
+
+
+
+//	    if(job_args->array_in[col][row][0] < 70)
+//	    {
+//		job_args->array_out[col][row][0] = 255;
+//		job_args->array_out[col][row][1] = 0;
+//		job_args->array_out[col][row][2] = 0;
+//	    }
+
 	}
-
-//	if (row % 10 == 0)
-//	{
-//	    gimp_progress_update ((gdouble) (row - start_row) / (gdouble) (x2 - start_colum));
-//	}
     }
-
-//    g_message("thread run\n");
-
     return NULL;
 }
 
@@ -505,7 +495,7 @@ void free_pixel_array(guchar ***array, int width, int height, int depth)
 }
 
 static gboolean
-blur_dialog (GimpDrawable *drawable)
+koi_dialog (GimpDrawable *drawable)
 {
   GtkWidget *dialog;
   GtkWidget *main_vbox;
@@ -568,13 +558,13 @@ blur_dialog (GimpDrawable *drawable)
   gtk_label_set_use_markup (GTK_LABEL (frame_label), TRUE);
 
   g_signal_connect_swapped (preview, "invalidated",
-                            G_CALLBACK (blur),
+			    G_CALLBACK (koi),
                             drawable);
   g_signal_connect_swapped (spinbutton_adj, "value_changed",
                             G_CALLBACK (gimp_preview_invalidate),
                             preview);
 
-  blur (drawable, GIMP_PREVIEW (preview));
+  koi (drawable, GIMP_PREVIEW (preview));
 
   g_signal_connect (spinbutton_adj, "value_changed",
                     G_CALLBACK (gimp_int_adjustment_update),
