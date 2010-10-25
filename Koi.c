@@ -170,6 +170,7 @@ static void run (const guchar *name, int nparams, const GimpParam *param,  int *
 static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 {
     GimpRunMode mode = GIMP_RUN_NONINTERACTIVE;
+    gint32 image_id, layer, new_layer;
     int          row, col, channel, channels;
     int         start_colum, start_row, x2, y2;
     int num_return_vals;
@@ -211,13 +212,34 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
     {
 	gimp_drawable_mask_bounds (drawable->drawable_id, &start_colum, &start_row, &x2, &y2);
 
+
+
 	width = x2 - start_colum;
 	height = y2 - start_row;
-	gimp_run_procedure("gimp-desaturate",&num_return_vals, GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_END);
 
+
+//all this is to make a copy of the image and stuff it into a layer for processing so i dont mess up the original image
+	image_id = gimp_drawable_get_image(drawable->drawable_id);
+	/* Get the active layer */
+	layer = gimp_image_get_active_layer(image_id);
+	if (layer == -1)
+	{
+	    return;
+	}
+	/* Make a copy of the layer.  There's no error indicator? */
+	new_layer = gimp_layer_copy(layer);
+	/* Add the new layer to this image as the top layer */
+	if (gimp_image_add_layer(image_id, new_layer, 0) != TRUE)
+	{
+
+	    return;
+	}
+
+	drawable->drawable_id = gimp_image_get_active_drawable(image_id);
+
+	gimp_run_procedure("gimp-desaturate",&num_return_vals, GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_END);
 	gimp_run_procedure("plug-in-edge",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_FLOAT, 9.99, GIMP_PDB_INT32, 2, GIMP_PDB_INT32, 5, GIMP_PDB_END);
 
-//	gimp_run_procedure("plug-in-sharpen",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_INT32, 99, GIMP_PDB_END);
     }
 
     channels = gimp_drawable_bpp (drawable->drawable_id);
