@@ -41,9 +41,11 @@ static void query (void);
 static void run (const guchar *name,  int nparams, const GimpParam  *param,  int *nreturn_vals, GimpParam **return_vals);
 
 static void koi (GimpDrawable  *drawable, GimpPreview  *preview);
-static void * find_blur_job(void *pArg);
+
+
 static gboolean koi_dialog (GimpDrawable *drawable);
 
+void * find_blur_job(void *pArg);
 void free_pixel_array(guchar ***array, int width, int height, int depth);
 void allocate_pixel_array(guchar ****array, int width, int height, int depth);
 
@@ -372,21 +374,21 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 }
 
   //################################### blur job #######################3
-static void * find_blur_job(void *pArg)
+void * find_blur_job(void *pArg)
 {
 
-int size = 20;
+    int size = 20;
 
-guchar slider[21];
-int ii;
-int counter = 0;
-guchar temp;
+    guchar slider[20];
+    int ii;
+    int counter = 0;
+    guchar temp;
 
 
-//get the argument passed in, and set our local variables
+    //get the argument passed in, and set our local variables
     JOB_ARG* job_args = (JOB_ARG*)pArg;
 
-//set my slider to zero
+    //set my slider to zero
     for(ii = 0; ii < size; ii++)
     {
 	slider[ii] = 0;
@@ -400,48 +402,35 @@ guchar temp;
 	{
 
 
-//set the current element in the slider to our newest pixel value
-		slider[counter] = job_args->array_in[col][row][0];
-		temp = 0;
-//look through the slider to see if we have any bright spots
-		for(ii = 0; ii < size; ii++)
-		{
-		    if(slider[ii] > temp)
-		    {
-			temp = slider[counter];
-		    }
-		}
-//set the color to red because its been messed with
-		if(temp < 70)
-		{
-		    job_args->array_out[col][row][0] = 255;
-		    job_args->array_out[col][row][1] = 0;
-		    job_args->array_out[col][row][2] = 0;
-		}
-		else
-		{
-		    job_args->array_out[col][row][0] = 80;
-		    job_args->array_out[col][row][1] = 190;
-		    job_args->array_out[col][row][2] = 70;
-		}
-
-
-//this will reset my slider counter so i dont have to make a queue or anything slow like that
-	    counter++;
-	    if(counter > size)
+	    //set the current element in the slider to our newest pixel value
+	    slider[counter] = job_args->array_in[col][row][0];
+	    temp = 0;
+	    //look through the slider to see if we have any bright spots
+	    for(ii = 0; ii < size; ii++)
 	    {
-		counter = 0;
+		if(slider[ii] > temp)
+		{
+		    temp = slider[ii];
+		}
 	    }
-//	    counter%=size;
 
+	    //set the color to red because its been messed with
+	    if(temp < 150)
+	    {
+		job_args->array_out[col][row][0] = 255;
+		job_args->array_out[col][row][1] = 0;
+		job_args->array_out[col][row][2] = 0;
+	    }
+	    else
+	    {
+		job_args->array_out[col][row][0] = 80;
+		job_args->array_out[col][row][1] = 190;
+		job_args->array_out[col][row][2] = 70;
+	    }
 
-
-//	    if(job_args->array_in[col][row][0] < 70)
-//	    {
-//		job_args->array_out[col][row][0] = 255;
-//		job_args->array_out[col][row][1] = 0;
-//		job_args->array_out[col][row][2] = 0;
-//	    }
+	    //this will reset my slider counter so i dont have to make a queue or anything slow like that
+	    counter++;
+	    counter%=size;
 
 	}
     }
