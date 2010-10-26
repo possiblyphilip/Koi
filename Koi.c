@@ -392,7 +392,21 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	gimp_drawable_flush (drawable);
 	gimp_drawable_merge_shadow (drawable->drawable_id, TRUE);
 	gimp_drawable_update (drawable->drawable_id, start_colum, start_row, width, height);
+
+	pixel[0] = 80;
+	pixel[0] = 190;
+	pixel[0] = 70;
+	pixel[0] = 0;
+
+
+
+//	gimp_run_procedure("plug-in-colortoalpha",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_COLOR, pixel[0], GIMP_PDB_END);
+	gimp_run_procedure("plug-in-despeckle",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_INT32, 2, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 255,  GIMP_PDB_END);
+
     }
+
+//    gimp_run_procedure("plug-in-colortoalpha",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_COLOR, (80, 190, 70), GIMP_PDB_END);
+
 }
 
   //################################### blur job #######################3
@@ -410,7 +424,7 @@ void * find_blur_job(void *pArg)
     //get the argument passed in, and set our local variables
     JOB_ARG* job_args = (JOB_ARG*)pArg;
 
-    //set my slider to zero
+//set my slider to zero
     for(ii = 0; ii < size; ii++)
     {
 	slider[ii] = 0;
@@ -422,7 +436,52 @@ void * find_blur_job(void *pArg)
     {
 	for (col = job_args->start_colum; col < job_args->start_colum+job_args->width; col++)
 	{
+//set the current element in the slider to our newest pixel value
+	    slider[counter] = job_args->array_in[col][row][0];
+	    temp = 0;
+//look through the slider to see if we have any bright spots
+	    for(ii = 0; ii < size; ii++)
+	    {
+		if(slider[ii] > temp)
+		{
+		    temp = slider[ii];
+		}
+	    }
+//set the color to red because its been messed with
+	    if(temp < 150)
+	    {
+		job_args->array_out[col][row][0] = 255;
+		job_args->array_out[col][row][1] = 0;
+		job_args->array_out[col][row][2] = 0;
+		job_args->array_out[col][row][3] = 255;
+	    }
+	    else
+	    {
+		job_args->array_out[col][row][0] = 80;
+		job_args->array_out[col][row][1] = 190;
+		job_args->array_out[col][row][2] = 70;
+		job_args->array_out[col][row][3] = 0;
+	    }
 
+	    //this will reset my slider counter so i dont have to make a queue or anything slow like that
+	    counter++;
+	    counter%=size;
+
+	}
+    }
+    //###################
+// now do the same image block virtically
+//set my slider to zero
+    for(ii = 0; ii < size; ii++)
+    {
+	slider[ii] = 0;
+    }
+
+
+    for (col = job_args->start_colum; col < job_args->start_colum+job_args->width; col++)
+    {
+	for (row = 0; row < job_args->height ; row++)
+	{
 
 	    //set the current element in the slider to our newest pixel value
 	    slider[counter] = job_args->array_in[col][row][0];
@@ -435,19 +494,31 @@ void * find_blur_job(void *pArg)
 		    temp = slider[ii];
 		}
 	    }
-
 	    //set the color to red because its been messed with
 	    if(temp < 150)
 	    {
-		job_args->array_out[col][row][0] = 255;
-		job_args->array_out[col][row][1] = 0;
-		job_args->array_out[col][row][2] = 0;
+//if the pixel is already green we dont want to set it to red, we will set it to grey instead
+		if(job_args->array_out[col][row][0] != 80)
+		{
+		    job_args->array_out[col][row][0] = 255;
+		    job_args->array_out[col][row][1] = 0;
+		    job_args->array_out[col][row][2] = 0;
+		    job_args->array_out[col][row][3] = 255;
+		}
+		else
+		{
+		    job_args->array_out[col][row][0] = 30;
+		    job_args->array_out[col][row][1] = 30;
+		    job_args->array_out[col][row][2] = 30;
+		    job_args->array_out[col][row][3] = 255;
+		}
 	    }
 	    else
 	    {
 		job_args->array_out[col][row][0] = 80;
 		job_args->array_out[col][row][1] = 190;
 		job_args->array_out[col][row][2] = 70;
+		job_args->array_out[col][row][3] = 0;
 	    }
 
 	    //this will reset my slider counter so i dont have to make a queue or anything slow like that
@@ -456,6 +527,7 @@ void * find_blur_job(void *pArg)
 
 	}
     }
+
     return NULL;
 }
 
@@ -477,7 +549,7 @@ void allocate_pixel_array(guchar ****array, int width, int height, int depth)
 	    arr[ii][jj]= (guchar *)malloc (depth * sizeof(guchar));
 	    for (kk = 0; kk < depth; ++kk)
 	    {
-		arr[ii][jj][kk] = 100;
+		arr[ii][jj][kk] = 0;
 	    }
 	}
     }
