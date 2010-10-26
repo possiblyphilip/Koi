@@ -170,7 +170,7 @@ static void run (const guchar *name, int nparams, const GimpParam *param,  int *
 static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 {
     GimpRunMode mode = GIMP_RUN_NONINTERACTIVE;
-    gint32 image_id, layer, new_layer;
+    gint32 image_id, layer, new_layer, top_layer;
     int          row, col, channel, channels;
     int         start_colum, start_row, x2, y2;
     int num_return_vals;
@@ -216,10 +216,16 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
 	width = x2 - start_colum;
 	height = y2 - start_row;
+//maybe this will add an alpha channel to the original so that the others have one ...
+
+	image_id = gimp_drawable_get_image(drawable->drawable_id);
+
+//	top_layer = gimp_image_get_active_layer( image_id);
+//	gimp_layer_add_alpha( top_layer);
 
 
 //all this is to make a copy of the image and stuff it into a layer for processing so i dont mess up the original image
-	image_id = gimp_drawable_get_image(drawable->drawable_id);
+
 	/* Get the active layer */
 	layer = gimp_image_get_active_layer(image_id);
 	if (layer == -1)
@@ -234,6 +240,9 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
 	    return;
 	}
+
+
+
 
 	drawable->drawable_id = gimp_image_get_active_drawable(image_id);
 
@@ -365,6 +374,8 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
 // write the array back to the out image here
     gimp_progress_set_text ("dumping Koi array");
+
+
     if(preview)
     {
 	for (row = 0; row < height; row++)
@@ -377,6 +388,11 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
     }
     else
     {
+//this way the green should be clear ...
+//	top_layer = gimp_run_procedure("gimp-image-get-active-layer",&num_return_vals, GIMP_PDB_IMAGE, image_id ,  GIMP_PDB_END);
+//	top_layer = gimp_image_get_active_layer( image_id);
+//	gimp_run_procedure("gimp-layer-add-alpha",&num_return_vals, GIMP_PDB_LAYER, top_layer ,  GIMP_PDB_END);
+
 	for (row = 0; row < height; row++)
 	{
 	    for (col = 0; col < width; col++)
@@ -414,7 +430,6 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	pixel[0] = 190;
 	pixel[0] = 70;
 	pixel[0] = 0;
-
 
 
 //	gimp_run_procedure("plug-in-colortoalpha",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_COLOR, pixel[0], GIMP_PDB_END);
@@ -465,7 +480,7 @@ void * find_blur_job(void *pArg)
 		}
 	    }
 //set the color to red because its been messed with
-	    if(temp < 150)
+	    if(temp < 70)
 	    {
 		job_args->array_out[col][row][0] = 255;
 		job_args->array_out[col][row][1] = 0;
@@ -512,7 +527,7 @@ void * find_blur_job(void *pArg)
 		}
 	    }
 	    //set the color to red because its been messed with
-	    if(temp < 150)
+	    if(temp < 70)
 	    {
 //if the pixel is already green we dont want to set it to red, we will set it to grey instead
 		if(job_args->array_out[col][row][0] != 80)
@@ -612,13 +627,13 @@ koi_dialog (GimpDrawable *drawable)
   gimp_ui_init ("koi", FALSE);
 
   dialog = gimp_dialog_new ("Koi", "koi",
-                            NULL, 0,
+			    NULL, 0,
 			    gimp_standard_help_func, "koi",
 
-                            GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-                            GTK_STOCK_OK,     GTK_RESPONSE_OK,
+			    GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+			    GTK_STOCK_OK,     GTK_RESPONSE_OK,
 
-                            NULL);
+			    NULL);
 
   main_vbox = gtk_vbox_new (FALSE, 6);
   gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), main_vbox);
@@ -648,7 +663,7 @@ koi_dialog (GimpDrawable *drawable)
   gtk_label_set_justify (GTK_LABEL (radius_label), GTK_JUSTIFY_RIGHT);
 
   spinbutton = gimp_spin_button_new (&spinbutton_adj, bvals.radius,
-                                     1, 32, 1, 1, 1, 5, 0);
+				     1, 32, 1, 1, 1, 5, 0);
   gtk_box_pack_start (GTK_BOX (main_hbox), spinbutton, FALSE, FALSE, 0);
   gtk_widget_show (spinbutton);
 
@@ -659,16 +674,16 @@ koi_dialog (GimpDrawable *drawable)
 
   g_signal_connect_swapped (preview, "invalidated",
 			    G_CALLBACK (koi),
-                            drawable);
+			    drawable);
   g_signal_connect_swapped (spinbutton_adj, "value_changed",
-                            G_CALLBACK (gimp_preview_invalidate),
-                            preview);
+			    G_CALLBACK (gimp_preview_invalidate),
+			    preview);
 
   koi (drawable, GIMP_PREVIEW (preview));
 
   g_signal_connect (spinbutton_adj, "value_changed",
-                    G_CALLBACK (gimp_int_adjustment_update),
-                    &bvals.radius);
+		    G_CALLBACK (gimp_int_adjustment_update),
+		    &bvals.radius);
   gtk_widget_show (dialog);
 
   run = (gimp_dialog_run (GIMP_DIALOG (dialog)) == GTK_RESPONSE_OK);
@@ -677,4 +692,3 @@ koi_dialog (GimpDrawable *drawable)
 
   return run;
 }
-
