@@ -266,6 +266,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
     allocate_pixel_array(&out_array,width, height, 4);
 
 //dump the gimp image data into my own array for processing
+    gimp_progress_set_text("filling Koi array");
     if (preview)
     {
 
@@ -279,6 +280,11 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 		{
 		    in_array[col][row][channel] = pixel[channel];
 		}
+	    }
+
+	    if (row % 10 == 0)
+	    {
+		gimp_progress_update ((gdouble) (row - start_row) / (gdouble) (x2 - start_colum));
 	    }
 	}
     }
@@ -295,6 +301,10 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 		    in_array[col][row][channel] = pixel[channel];
 		}
 	    }
+	    if (row % 10 == 0)
+	    {
+		gimp_progress_update ((gdouble) (row - start_row) / (gdouble) (x2 - start_colum));
+	    }
 	}
     }
 
@@ -308,6 +318,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
 //cut up and farm out the image job
 //ill only kick off one thred when its the preview for now
+    gimp_progress_set_text("Koi working");
     if(preview)
     {
 	job_args[0].start_colum = 0;
@@ -353,6 +364,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
     }
 
 // write the array back to the out image here
+    gimp_progress_set_text ("dumping Koi array");
     if(preview)
     {
 	for (row = 0; row < height; row++)
@@ -370,6 +382,11 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	    for (col = 0; col < width; col++)
 	    {
 		gimp_pixel_rgn_set_pixel (&rgn_out, out_array[col][row],  col, row);
+	    }
+
+	    if (row % 10 == 0)
+	    {
+		gimp_progress_update ((gdouble) (row - start_row) / (gdouble) (x2 - start_colum));
 	    }
 	}
     }
@@ -401,7 +418,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
 
 //	gimp_run_procedure("plug-in-colortoalpha",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_COLOR, pixel[0], GIMP_PDB_END);
-	gimp_run_procedure("plug-in-despeckle",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_INT32, 2, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 255,  GIMP_PDB_END);
+	gimp_run_procedure("plug-in-despeckle",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_INT32, 5, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 255,  GIMP_PDB_END);
 
     }
 
