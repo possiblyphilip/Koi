@@ -23,9 +23,10 @@
 
 typedef struct
 {
-  int     radius;
-  gboolean preview;
-  gboolean box_checked;
+    int     radius;
+    gboolean preview;
+    gboolean texture_checked;
+    gboolean clone_checked;
 } GUI_values;
 
 typedef struct
@@ -45,7 +46,8 @@ static void koi (GimpDrawable  *drawable, GimpPreview  *preview);
 
 
 static gboolean koi_dialog (GimpDrawable *drawable);
-static void callback( GtkWidget *widget,  gpointer   data );
+static void texture_check_button_callback( GtkWidget *widget,  gpointer   data );
+static void clone_check_button_callback( GtkWidget *widget,  gpointer   data );
 
 void * find_blur_job(void *pArg);
 void free_pixel_array(guchar ***array, int width, int height, int depth);
@@ -98,7 +100,7 @@ query (void)
     "ben howard",
     "Copyright ben howard",
     "2010",
-    "_Koi(preview)...",
+    "_Koi",
     "RGB*, GRAY*",
     GIMP_PLUGIN,
     G_N_ELEMENTS (args), 0,
@@ -165,7 +167,7 @@ static void run (const guchar *name, int nparams, const GimpParam *param,  int *
 
     /*  Finally, set options in the core  */
     if (run_mode == GIMP_RUN_INTERACTIVE)
-	gimp_set_data ("koi", &gvalues, sizeof (GUI_values));
+	gimp_set_data ("plug-in-Koi", &gvalues, sizeof (GUI_values));
 
     return;
 }
@@ -192,12 +194,6 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
     JOB_ARG job_args[4];
 
-    if(gvalues.box_checked == TRUE)
-    {
-    g_message("box checked!\n");
-    }
-
-
     if (! preview)
     {
 	gimp_progress_init ("Koi...");
@@ -212,16 +208,10 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	x2 = start_colum + width;
 	y2 = start_row + height;
 	threads = 1;
-
-
-
-
     }
     else
     {
 	gimp_drawable_mask_bounds (drawable->drawable_id, &start_colum, &start_row, &x2, &y2);
-
-
 
 	width = x2 - start_colum;
 	height = y2 - start_row;
@@ -249,9 +239,6 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
 	    return;
 	}
-
-
-
 
 	drawable->drawable_id = gimp_image_get_active_drawable(image_id);
 
@@ -287,7 +274,6 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
     gimp_progress_set_text("filling Koi array");
     if (preview)
     {
-
 	for (row = 0; row < height; row++)
 	{
 	    for (col = 0; col < width; col++)
@@ -337,6 +323,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 //cut up and farm out the image job
 //ill only kick off one thred when its the preview for now
     gimp_progress_set_text("Koi working");
+
     if(preview)
     {
 	job_args[0].start_colum = 0;
@@ -348,7 +335,6 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	if (rc[0] != 0)
 	{
 //something bad happened
-	     g_message("preview thread failed\n");
 	}
     }
     else
@@ -364,7 +350,6 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	    if (rc[ii] != 0)
 	    {
 		//something bad happened
-		g_message("preview worker failed\n");
 	    }
 	}
     }
@@ -632,7 +617,8 @@ koi_dialog (GimpDrawable *drawable)
   GtkObject *spinbutton_adj;
   GtkWidget *frame_label;
 
-    GtkWidget *check_button;
+    GtkWidget *texture_check_button;
+    GtkWidget *clone_check_button;
 
   gboolean   run;
 
@@ -671,12 +657,20 @@ koi_dialog (GimpDrawable *drawable)
 
   //im going to try and put in my own boxes
 
-  check_button = gtk_check_button_new_with_label ( "Texture loss");
-  gtk_widget_show (check_button);
-  gtk_box_pack_start (GTK_BOX (main_hbox), check_button, FALSE, FALSE, 6);
-  gtk_label_set_justify (GTK_LABEL (check_button), GTK_JUSTIFY_RIGHT);
+  texture_check_button = gtk_check_button_new_with_label ( "Texture loss");
+  gtk_widget_show (texture_check_button);
+  gtk_box_pack_start (GTK_BOX (main_hbox), texture_check_button, FALSE, FALSE, 6);
+  gtk_label_set_justify (GTK_LABEL (texture_check_button), GTK_JUSTIFY_RIGHT);
 
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_button), FALSE);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(texture_check_button), FALSE);
+
+
+    clone_check_button = gtk_check_button_new_with_label ( "Cloneing");
+    gtk_widget_show (clone_check_button);
+    gtk_box_pack_start (GTK_BOX (main_hbox), clone_check_button, FALSE, FALSE, 6);
+    gtk_label_set_justify (GTK_LABEL (clone_check_button), GTK_JUSTIFY_RIGHT);
+
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(clone_check_button), FALSE);
 
   //we will see how this runs
 
@@ -707,7 +701,8 @@ koi_dialog (GimpDrawable *drawable)
 
 
 
-  g_signal_connect (check_button, "clicked", G_CALLBACK (callback), &gvalues);
+  g_signal_connect (texture_check_button, "clicked", G_CALLBACK (texture_check_button_callback), &gvalues);
+   g_signal_connect (clone_check_button, "clicked", G_CALLBACK (clone_check_button_callback), &gvalues);
 
   gtk_widget_show (dialog);
 
@@ -719,29 +714,33 @@ koi_dialog (GimpDrawable *drawable)
 }
 
 /* Our usual callback function */
-static void callback( GtkWidget *widget,  gpointer   data )
+static void texture_check_button_callback( GtkWidget *widget,  gpointer   data )
 {
-
     GUI_values *temp_vals;
- //   	g_message("working - kinda");
     temp_vals = (GUI_values *)data;
 
     if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON (widget)))
     {
-	/* If control reaches here, the toggle button is down */
-
-
-	temp_vals->box_checked = TRUE;
-
-//	g_message("clicked!");
-
+	temp_vals->texture_checked = TRUE;
     }
     else
     {
-
-	/* If control reaches here, the toggle button is up */
-	temp_vals->box_checked = FALSE;
-
+	temp_vals->texture_checked = FALSE;
     }
-    
+}
+
+/* Our usual callback function */
+static void clone_check_button_callback( GtkWidget *widget,  gpointer   data )
+{
+    GUI_values *temp_vals;
+    temp_vals = (GUI_values *)data;
+
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON (widget)))
+    {
+	temp_vals->clone_checked = TRUE;
+    }
+    else
+    {
+	temp_vals->clone_checked = FALSE;
+    }
 }
