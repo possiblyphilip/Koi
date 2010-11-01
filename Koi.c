@@ -25,7 +25,8 @@ typedef struct
 {
   int     radius;
   gboolean preview;
-} MyBlurVals;
+  gboolean box_checked;
+} GUI_values;
 
 typedef struct
 {
@@ -44,16 +45,18 @@ static void koi (GimpDrawable  *drawable, GimpPreview  *preview);
 
 
 static gboolean koi_dialog (GimpDrawable *drawable);
+static void callback( GtkWidget *widget,  gpointer   data );
 
 void * find_blur_job(void *pArg);
 void free_pixel_array(guchar ***array, int width, int height, int depth);
 void allocate_pixel_array(guchar ****array, int width, int height, int depth);
 
 /* Set up default values for options */
-static MyBlurVals bvals =
+static GUI_values gvalues =
 {
   3,  /* radius */
-  1   /* preview */
+  1,   /* preview */
+    0   /*check box? */
 };
 
 GimpPlugInInfo PLUG_IN_INFO =
@@ -89,8 +92,8 @@ query (void)
   };
 
   gimp_install_procedure (
+    "plug-in-Koi",
     "Koi",
-    "Koi(preview)",
     "Highlights image forgery",
     "ben howard",
     "Copyright ben howard",
@@ -101,7 +104,7 @@ query (void)
     G_N_ELEMENTS (args), 0,
     args, NULL);
 
-  gimp_plugin_menu_register ("Koi", "<Image>/Filters/Misc");
+  gimp_plugin_menu_register ("plug-in-Koi", "<Image>/Filters/Misc");
 }
 
 static void run (const guchar *name, int nparams, const GimpParam *param,  int *nreturn_vals, GimpParam **return_vals)
@@ -129,7 +132,7 @@ static void run (const guchar *name, int nparams, const GimpParam *param,  int *
     {
     case GIMP_RUN_INTERACTIVE:
 	/* Get options last values if needed */
-	gimp_get_data ("koi", &bvals);
+	gimp_get_data ("plug-in-Koi", &gvalues);
 
 	/* Display the dialog */
 	if (! koi_dialog (drawable))
@@ -143,12 +146,12 @@ static void run (const guchar *name, int nparams, const GimpParam *param,  int *
 	if (nparams != 4)
 	    status = GIMP_PDB_CALLING_ERROR;
 	if (status == GIMP_PDB_SUCCESS)
-	    bvals.radius = param[3].data.d_int32;
+	    gvalues.radius = param[3].data.d_int32;
 	break;
 
     case GIMP_RUN_WITH_LAST_VALS:
 	/*  Get options last values if needed  */
-	gimp_get_data ("koi", &bvals);
+	gimp_get_data ("plug-in-Koi", &gvalues);
 	break;
 
     default:
@@ -162,7 +165,7 @@ static void run (const guchar *name, int nparams, const GimpParam *param,  int *
 
     /*  Finally, set options in the core  */
     if (run_mode == GIMP_RUN_INTERACTIVE)
-	gimp_set_data ("koi", &bvals, sizeof (MyBlurVals));
+	gimp_set_data ("koi", &gvalues, sizeof (GUI_values));
 
     return;
 }
@@ -189,7 +192,10 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
     JOB_ARG job_args[4];
 
-
+    if(gvalues.box_checked == TRUE)
+    {
+    g_message("box checked!\n");
+    }
 
 
     if (! preview)
@@ -206,7 +212,10 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	x2 = start_colum + width;
 	y2 = start_row + height;
 	threads = 1;
-//	g_message("preview\n");
+
+
+
+
     }
     else
     {
@@ -254,7 +263,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
     channels = gimp_drawable_bpp (drawable->drawable_id);
 
     /* Allocate a big enough tile cache */
-    gimp_tile_cache_ntiles (2 * (drawable->width / gimp_tile_width () + 1));
+    gimp_tile_cache_ntiles (8 * (drawable->width / gimp_tile_width () + 1));
 
     /* Initialises two PixelRgns, one to read original data,
    * and the other to write output data. That second one will
@@ -480,7 +489,7 @@ void * find_blur_job(void *pArg)
 		}
 	    }
 //set the color to red because its been messed with
-	    if(temp < 70)
+	    if(temp < 110)
 	    {
 		job_args->array_out[col][row][0] = 255;
 		job_args->array_out[col][row][1] = 0;
@@ -527,7 +536,7 @@ void * find_blur_job(void *pArg)
 		}
 	    }
 	    //set the color to red because its been messed with
-	    if(temp < 70)
+	    if(temp < 110)
 	    {
 //if the pixel is already green we dont want to set it to red, we will set it to grey instead
 		if(job_args->array_out[col][row][0] != 80)
@@ -622,13 +631,16 @@ koi_dialog (GimpDrawable *drawable)
   GtkWidget *spinbutton;
   GtkObject *spinbutton_adj;
   GtkWidget *frame_label;
+
+    GtkWidget *check_button;
+
   gboolean   run;
 
   gimp_ui_init ("koi", FALSE);
 
-  dialog = gimp_dialog_new ("Koi", "koi",
+  dialog = gimp_dialog_new ("Koi", "Koi",
 			    NULL, 0,
-			    gimp_standard_help_func, "koi",
+			    gimp_standard_help_func, "Koi",
 
 			    GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 			    GTK_STOCK_OK,     GTK_RESPONSE_OK,
@@ -639,7 +651,7 @@ koi_dialog (GimpDrawable *drawable)
   gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), main_vbox);
   gtk_widget_show (main_vbox);
 
-  preview = gimp_drawable_preview_new (drawable, &bvals.preview);
+  preview = gimp_drawable_preview_new (drawable, &gvalues.preview);
   gtk_box_pack_start (GTK_BOX (main_vbox), preview, TRUE, TRUE, 0);
   gtk_widget_show (preview);
 
@@ -657,33 +669,46 @@ koi_dialog (GimpDrawable *drawable)
   gtk_widget_show (main_hbox);
   gtk_container_add (GTK_CONTAINER (alignment), main_hbox);
 
-  radius_label = gtk_label_new_with_mnemonic ("_Radius:");
-  gtk_widget_show (radius_label);
-  gtk_box_pack_start (GTK_BOX (main_hbox), radius_label, FALSE, FALSE, 6);
-  gtk_label_set_justify (GTK_LABEL (radius_label), GTK_JUSTIFY_RIGHT);
+  //im going to try and put in my own boxes
 
-  spinbutton = gimp_spin_button_new (&spinbutton_adj, bvals.radius,
-				     1, 32, 1, 1, 1, 5, 0);
-  gtk_box_pack_start (GTK_BOX (main_hbox), spinbutton, FALSE, FALSE, 0);
-  gtk_widget_show (spinbutton);
+  check_button = gtk_check_button_new_with_label ( "Texture loss");
+  gtk_widget_show (check_button);
+  gtk_box_pack_start (GTK_BOX (main_hbox), check_button, FALSE, FALSE, 6);
+  gtk_label_set_justify (GTK_LABEL (check_button), GTK_JUSTIFY_RIGHT);
+
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_button), FALSE);
+
+  //we will see how this runs
+
+//  radius_label = gtk_label_new_with_mnemonic ("_Radius:");
+//  gtk_widget_show (radius_label);
+//  gtk_box_pack_start (GTK_BOX (main_hbox), radius_label, FALSE, FALSE, 6);
+//  gtk_label_set_justify (GTK_LABEL (radius_label), GTK_JUSTIFY_RIGHT);
+//
+//  spinbutton = gimp_spin_button_new (&spinbutton_adj, gvalues.radius, 1, 32, 1, 1, 1, 5, 0);
+//  gtk_box_pack_start (GTK_BOX (main_hbox), spinbutton, FALSE, FALSE, 0);
+//  gtk_widget_show (spinbutton);
 
   frame_label = gtk_label_new ("<b>Modify radius</b>");
   gtk_widget_show (frame_label);
   gtk_frame_set_label_widget (GTK_FRAME (frame), frame_label);
   gtk_label_set_use_markup (GTK_LABEL (frame_label), TRUE);
 
-  g_signal_connect_swapped (preview, "invalidated",
-			    G_CALLBACK (koi),
-			    drawable);
-  g_signal_connect_swapped (spinbutton_adj, "value_changed",
-			    G_CALLBACK (gimp_preview_invalidate),
-			    preview);
+
+
+
+  g_signal_connect_swapped (preview, "invalidated",G_CALLBACK (koi), drawable);
+ // g_signal_connect_swapped (spinbutton_adj, "value_changed",G_CALLBACK (gimp_preview_invalidate),  preview);
 
   koi (drawable, GIMP_PREVIEW (preview));
 
-  g_signal_connect (spinbutton_adj, "value_changed",
-		    G_CALLBACK (gimp_int_adjustment_update),
-		    &bvals.radius);
+//  g_signal_connect (spinbutton_adj, "value_changed", G_CALLBACK (gimp_int_adjustment_update), &gvalues.radius);
+
+
+
+
+  g_signal_connect (check_button, "clicked", G_CALLBACK (callback), &gvalues);
+
   gtk_widget_show (dialog);
 
   run = (gimp_dialog_run (GIMP_DIALOG (dialog)) == GTK_RESPONSE_OK);
@@ -691,4 +716,32 @@ koi_dialog (GimpDrawable *drawable)
   gtk_widget_destroy (dialog);
 
   return run;
+}
+
+/* Our usual callback function */
+static void callback( GtkWidget *widget,  gpointer   data )
+{
+
+    GUI_values *temp_vals;
+ //   	g_message("working - kinda");
+    temp_vals = (GUI_values *)data;
+
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON (widget)))
+    {
+	/* If control reaches here, the toggle button is down */
+
+
+	temp_vals->box_checked = TRUE;
+
+//	g_message("clicked!");
+
+    }
+    else
+    {
+
+	/* If control reaches here, the toggle button is up */
+	temp_vals->box_checked = FALSE;
+
+    }
+    
 }
