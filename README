@@ -35,15 +35,14 @@ Koi is located under Filters>Misc>Koi
 Koi will inspect the the selected image and produce layers highlighting modified regions. currently it is looking for smoothed regions in the image and highlighting them red. An algorithm to find and highlight clone tool use is under development.
 ##########################################
 
-<img src="http://lh4.ggpht.com/_czIamuN1qLs/TMoCnysaI0I/AAAAAAAAA5E/499huQJswdc/s400/Screenshot-_pic4-1.jpg-45.0%20%28RGB%2C%202%20layers%29%201280x960%20%E2%80%93%20GIMP.png"  alt="Original Image" />
+current screenshots
 
-<img src="http://lh4.ggpht.com/_czIamuN1qLs/TMoCohCvbfI/AAAAAAAAA5M/1vLnnSWrUls/s400/Screenshot-_pic4-2.jpg-44.0%20%28RGB%2C%202%20layers%29%201280x960%20%E2%80%93%20GIMP.png"  alt="Original Image" />
+http://lh4.ggpht.com/_czIamuN1qLs/TMoCnysaI0I/AAAAAAAAA5E/499huQJswdc/s400/Screenshot-_pic4-1.jpg-45.0%20%28RGB%2C%202%20layers%29%201280x960%20%E2%80%93%20GIMP.png
+http://lh4.ggpht.com/_czIamuN1qLs/TMoCohCvbfI/AAAAAAAAA5M/1vLnnSWrUls/s400/Screenshot-_pic4-2.jpg-44.0%20%28RGB%2C%202%20layers%29%201280x960%20%E2%80%93%20GIMP.png
+http://lh3.ggpht.com/_czIamuN1qLs/TMoCoQt3ISI/AAAAAAAAA5I/k1D5G67knwo/s400/Screenshot-_pic4-2.jpg-43.0%20%28RGB%2C%202%20layers%29%201280x960%20%E2%80%93%20GIMP.png
+http://lh5.ggpht.com/_czIamuN1qLs/TMoCpEWKkqI/AAAAAAAAA5Q/TIgjVvdD9r8/s144/Screenshot-_Untitled-46.0%20%28RGB%2C%202%20layers%29%201280x960%20%E2%80%93%20GIMP.png
 
-<img src="http://lh3.ggpht.com/_czIamuN1qLs/TMoCoQt3ISI/AAAAAAAAA5I/k1D5G67knwo/s400/Screenshot-_pic4-2.jpg-43.0%20%28RGB%2C%202%20layers%29%201280x960%20%E2%80%93%20GIMP.png"  alt="Original Image" />
-
-<img src="http://lh5.ggpht.com/_czIamuN1qLs/TMoCpEWKkqI/AAAAAAAAA5Q/TIgjVvdD9r8/s144/Screenshot-_Untitled-46.0%20%28RGB%2C%202%20layers%29%201280x960%20%E2%80%93%20GIMP.png"  alt="Original Image" />
-
-
+##########################################
 
 Koi is a system that can identify and highlight image manipulation artifacts. In a world of digital media, every image is suspect of forgery. Koi can put to rest the fear publishers, news agencies , insurance agencies and anyone else who may depend on an image later found to be digitally edited. Front page news has had its share of embarrassing forgeries published. With Koi in place an image can be properly inspected for signs of forgery before it is published. Some companies have forged images for public relations campaigns which news media picked up, individuals fake images for media attention or to defraud insurance companies. Images “photoshopped” for fun have ended up being the center of news media attention only to be discovered as fakes.. Modern companies have started using social networking site content in their employee hiring process. Knowing if an image has been altered could provide employers with an edge in hiring the best employees possible. With digital images becoming ever more popular police and other law enforcement agencies need to be able to verify whether images have been altered for use in court as evidence. With forged images rampant, publishing and verifying content is a huge edge in the information age. Whenever an image is digitally altered the software doing the modification changes the original image in ways that may not be detectable to the unaided eye. By applying filters, running transforms and other proprietary Koi algorithms on an image the modifications can be highlighted and exposed. Every contact leaves a trace – Koi can find it.
 
