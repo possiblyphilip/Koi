@@ -23,7 +23,6 @@
 
 typedef struct
 {
-    int     radius;
     gboolean preview;
     gboolean texture_checked;
     gboolean clone_checked;
@@ -37,6 +36,7 @@ typedef struct
     int start_colum;
     int height;
     int width;
+    float percent;
 }JOB_ARG;
 
 static void query (void);
@@ -50,15 +50,16 @@ static void texture_check_button_callback( GtkWidget *widget,  gpointer   data )
 static void clone_check_button_callback( GtkWidget *widget,  gpointer   data );
 
 void * find_blur_job(void *pArg);
+void * find_clone_job(void *pArg);
 void free_pixel_array(guchar ***array, int width, int height, int depth);
 void allocate_pixel_array(guchar ****array, int width, int height, int depth);
 
 /* Set up default values for options */
-static GUI_values gvalues =
+static GUI_values gui_options =
 {
-  3,  /* radius */
-  1,   /* preview */
-    0   /*check box? */
+  0,  //preview
+  0,   //texture
+    0   //clone
 };
 
 GimpPlugInInfo PLUG_IN_INFO =
@@ -134,7 +135,7 @@ static void run (const guchar *name, int nparams, const GimpParam *param,  int *
     {
     case GIMP_RUN_INTERACTIVE:
 	/* Get options last values if needed */
-	gimp_get_data ("plug-in-Koi", &gvalues);
+	gimp_get_data ("plug-in-Koi", &gui_options);
 
 	/* Display the dialog */
 	if (! koi_dialog (drawable))
@@ -148,12 +149,12 @@ static void run (const guchar *name, int nparams, const GimpParam *param,  int *
 	if (nparams != 4)
 	    status = GIMP_PDB_CALLING_ERROR;
 	if (status == GIMP_PDB_SUCCESS)
-	    gvalues.radius = param[3].data.d_int32;
+//	    gui_options.radius = param[3].data.d_int32;
 	break;
 
     case GIMP_RUN_WITH_LAST_VALS:
 	/*  Get options last values if needed  */
-	gimp_get_data ("plug-in-Koi", &gvalues);
+	gimp_get_data ("plug-in-Koi", &gui_options);
 	break;
 
     default:
@@ -167,7 +168,7 @@ static void run (const guchar *name, int nparams, const GimpParam *param,  int *
 
     /*  Finally, set options in the core  */
     if (run_mode == GIMP_RUN_INTERACTIVE)
-	gimp_set_data ("plug-in-Koi", &gvalues, sizeof (GUI_values));
+	gimp_set_data ("plug-in-Koi", &gui_options, sizeof (GUI_values));
 
     return;
 }
@@ -179,12 +180,13 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
     int          row, col, channel, channels;
     int         start_colum, start_row, x2, y2;
     int num_return_vals;
-//    int         start_colum, start_row;
     int ii;
     GimpPixelRgn rgn_in, rgn_out;
     int         width, height;
+
     pthread_t thread_id[4];
-    int rc[4];
+    int thread_return_value[4];
+
     int threads = 4;
 
     guchar pixel[4];
@@ -198,6 +200,9 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
     {
 	gimp_progress_init ("Koi...");
     }
+
+    /* Allocate a big enough tile cache */
+    gimp_tile_cache_ntiles (8 * (drawable->width / gimp_tile_width () + 1));
 
     /* Gets upper left and lower right coordinates,
    * and layers number in the image */
@@ -242,15 +247,18 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
 	drawable->drawable_id = gimp_image_get_active_drawable(image_id);
 
+
+    }
+
+    if(gui_options.texture_checked == TRUE)
+    {
 	gimp_run_procedure("gimp-desaturate",&num_return_vals, GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_END);
 	gimp_run_procedure("plug-in-edge",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_FLOAT, 9.99, GIMP_PDB_INT32, 2, GIMP_PDB_INT32, 5, GIMP_PDB_END);
-
     }
 
     channels = gimp_drawable_bpp (drawable->drawable_id);
 
-    /* Allocate a big enough tile cache */
-    gimp_tile_cache_ntiles (8 * (drawable->width / gimp_tile_width () + 1));
+
 
     /* Initialises two PixelRgns, one to read original data,
    * and the other to write output data. That second one will
@@ -272,8 +280,8 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
 //dump the gimp image data into my own array for processing
     gimp_progress_set_text("filling Koi array");
-    if (preview)
-    {
+//    if (preview)
+//    {
 	for (row = 0; row < height; row++)
 	{
 	    for (col = 0; col < width; col++)
@@ -291,26 +299,26 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 		gimp_progress_update ((gdouble) (row - start_row) / (gdouble) (x2 - start_colum));
 	    }
 	}
-    }
-    else
-    {
-	for (row = 0; row < height; row++)
-	{
-	    for (col = 0; col < width; col++)
-	    {
-		gimp_pixel_rgn_get_pixel (&rgn_in, pixel, start_colum+col,start_row+row);
-
-		for(channel = 0; channel < 4; channel++)
-		{
-		    in_array[col][row][channel] = pixel[channel];
-		}
-	    }
-	    if (row % 10 == 0)
-	    {
-		gimp_progress_update ((gdouble) (row - start_row) / (gdouble) (x2 - start_colum));
-	    }
-	}
-    }
+//    }
+//    else
+//    {
+//	for (row = 0; row < height; row++)
+//	{
+//	    for (col = 0; col < width; col++)
+//	    {
+//		gimp_pixel_rgn_get_pixel (&rgn_in, pixel, start_colum+col,start_row+row);
+//
+//		for(channel = 0; channel < 4; channel++)
+//		{
+//		    in_array[col][row][channel] = pixel[channel];
+//		}
+//	    }
+//	    if (row % 10 == 0)
+//	    {
+//		gimp_progress_update ((gdouble) (row - start_row) / (gdouble) (x2 - start_colum));
+//	    }
+//	}
+//    }
 
 //making sure i have the pointer hooked up to each copy of my  job arguments
     for(ii = 0; ii < threads; ii++)
@@ -324,20 +332,21 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 //ill only kick off one thred when its the preview for now
     gimp_progress_set_text("Koi working");
 
-    if(preview)
-    {
-	job_args[0].start_colum = 0;
-	job_args[0].start_row = 0;
-	job_args[0].width = width;
-	job_args[0].height = height;
-
-	rc[0] = pthread_create((pthread_t*) &thread_id[0], NULL, find_blur_job, (void*)&job_args[0]);
-	if (rc[0] != 0)
-	{
-//something bad happened
-	}
-    }
-    else
+//    if(preview)
+//    {
+//	job_args[0].start_colum = 0;
+//	job_args[0].start_row = 0;
+//	job_args[0].width = width;
+//	job_args[0].height = height;
+//
+//	thread_return_value[0] = pthread_create((pthread_t*) &thread_id[0], NULL, find_blur_job, (void*)&job_args[0]);
+//	if (thread_return_value[0] != 0)
+//	{
+////something bad happened
+//	}
+//    }
+//    else
+    if(gui_options.texture_checked == TRUE)
     {
 	for(ii = 0; ii < threads; ii++)
 	{
@@ -346,8 +355,17 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	    job_args[ii].width = (width / threads);
 	    job_args[ii].height = height;
 
-	    rc[ii] = pthread_create((pthread_t*) &thread_id[ii], NULL, find_blur_job, (void*)&job_args[ii]);
-	    if (rc[ii] != 0)
+	    thread_return_value[ii] = pthread_create((pthread_t*) &thread_id[ii], NULL, find_blur_job, (void*)&job_args[ii]);
+	    if (thread_return_value[ii] != 0)
+	    {
+		//something bad happened
+	    }
+	}
+	//hang out and wait till all the threads are done
+	for(ii = 0; ii < threads; ii++)
+	{
+	    thread_return_value[ii] = pthread_join(thread_id[ii], NULL);
+	    if (thread_return_value[ii] != 0)
 	    {
 		//something bad happened
 	    }
@@ -355,16 +373,35 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
     }
 
 
-//hang out and wait till all the threads are done
-    for(ii = 0; ii < threads; ii++)
+
+    if(gui_options.clone_checked == TRUE)
     {
-	rc[ii] = pthread_join(thread_id[ii], NULL);
-	if (rc[ii] != 0)
+	for(ii = 0; ii < threads; ii++)
 	{
-//	     g_message("thread join failed\n");
-	  //something bad happened
+	    job_args[ii].start_colum = (width*ii) / threads;
+	    job_args[ii].start_row = 0;
+	    job_args[ii].width = (width / threads);
+	    job_args[ii].height = height;
+
+	    thread_return_value[ii] = pthread_create((pthread_t*) &thread_id[ii], NULL, find_clone_job, (void*)&job_args[ii]);
+	    if (thread_return_value[ii] != 0)
+	    {
+		//something bad happened
+	    }
+	}
+	//hang out and wait till all the threads are done
+	for(ii = 0; ii < threads; ii++)
+	{
+	    thread_return_value[ii] = pthread_join(thread_id[ii], NULL);
+	    if (thread_return_value[ii] != 0)
+	    {
+		//something bad happened
+	    }
 	}
     }
+
+
+
 
 // write the array back to the out image here
     gimp_progress_set_text ("dumping Koi array");
@@ -401,9 +438,6 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	}
     }
 
-
-
-//#################################3 free the array memory
     free_pixel_array(in_array,width, height, 4);
     free_pixel_array(out_array,width, height, 4);
 
@@ -414,25 +448,112 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
     }
     else
     {
-
-
 	gimp_drawable_flush (drawable);
 	gimp_drawable_merge_shadow (drawable->drawable_id, TRUE);
 	gimp_drawable_update (drawable->drawable_id, start_colum, start_row, width, height);
 
-	pixel[0] = 80;
-	pixel[0] = 190;
-	pixel[0] = 70;
-	pixel[0] = 0;
+//	pixel[0] = 80;
+//	pixel[0] = 190;
+//	pixel[0] = 70;
+//	pixel[0] = 0;
 
 
 //	gimp_run_procedure("plug-in-colortoalpha",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_COLOR, pixel[0], GIMP_PDB_END);
-	gimp_run_procedure("plug-in-despeckle",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_INT32, 5, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 255,  GIMP_PDB_END);
-
+	if(gui_options.texture_checked == TRUE)
+	{
+	    gimp_run_procedure("plug-in-despeckle",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_INT32, 5, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 255,  GIMP_PDB_END);
+	}
     }
 
 //    gimp_run_procedure("plug-in-colortoalpha",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_COLOR, (80, 190, 70), GIMP_PDB_END);
 
+}
+
+  //################################### clone job ########################################################## clone job #######################
+
+void * find_clone_job(void *pArg)
+{
+
+    int block_size = 10;
+
+    int block_row,block_col;
+    int counter = 0;
+    int temp = 0;
+    int from_row, to_row, from_col, to_col, channel;
+
+
+    //get the argument passed in, and set our local variables
+    JOB_ARG* job_args = (JOB_ARG*)pArg;
+
+
+//    for (from_row = 0; from_row < job_args->height ; from_row++)
+//    {
+//	for (from_col = job_args->start_colum; from_col < job_args->start_colum+job_args->width; from_col++)
+//	{
+//	    job_args->array_out[from_col][from_row][0] = job_args->array_in[from_col][from_row][0];
+//	    job_args->array_out[from_col][from_row][1] = 255;
+//	    job_args->array_out[from_col][from_row][2] = 0;
+//
+//	}
+//    }
+
+
+    for (from_row = 0; from_row < job_args->height-block_size; from_row++)
+    {
+	for (from_col = job_args->start_colum; from_col < job_args->start_colum+job_args->width-block_size; from_col++)
+	{
+	    for (to_row = from_row; to_row < job_args->height-block_size; to_row++)
+	    {
+		for (to_col = job_args->start_colum; to_col < job_args->start_colum+job_args->width-block_size; to_col++)
+		{
+		    if(from_row != to_row || from_col != to_col)
+		    {
+			temp = 0;
+			for (block_row = 0; block_row < block_size ; block_row++)
+			{
+			    for (block_col = 0; block_col < block_size && temp==0; block_col++)
+			    {
+
+				temp += (job_args->array_in[from_col+block_col][from_row+block_row][0] - job_args->array_in[to_col+block_col][to_row+block_row][0]);
+
+			    }
+			}
+
+			if(temp == 0)
+			{
+			    for (block_row = 0; block_row < block_size ; block_row++)
+			    {
+				for (block_col = 0; block_col < block_size; block_col++)
+				{
+				    job_args->array_out[to_col+block_col][to_row+block_row][0] = 255;
+				    job_args->array_out[to_col+block_col][to_row+block_row][1] = 115;
+				    job_args->array_out[to_col+block_col][to_row+block_row][2] = 0;
+				    job_args->array_out[to_col+block_col][to_row+block_row][3] = 0;
+				}
+			    }
+			}
+		    }
+
+
+//		    else
+//		    {
+//
+//			job_args->array_out[to_col][to_row][0] = 0;
+//			job_args->array_out[to_col][to_row][1] = 0;
+//			job_args->array_out[to_col][to_row][2] = 255;
+//			job_args->array_out[to_col][to_row][3] = 0;
+//		    }
+		}
+	    }
+	}
+//	if (from_row % 10 == 0)
+//	{
+//	    gimp_progress_update ((gdouble) from_row / job_args->height);
+//	}
+    }
+
+
+    return NULL;
 }
 
   //################################### blur job #######################3
@@ -445,6 +566,7 @@ void * find_blur_job(void *pArg)
     int ii;
     int counter = 0;
     guchar temp;
+    int row, col, channel;
 
 
     //get the argument passed in, and set our local variables
@@ -456,7 +578,7 @@ void * find_blur_job(void *pArg)
 	slider[ii] = 0;
     }
 
-    int row, col, channel;
+
 
     for (row = 0; row < job_args->height ; row++)
     {
@@ -603,8 +725,7 @@ void free_pixel_array(guchar ***array, int width, int height, int depth)
     free(array);
 }
 
-static gboolean
-koi_dialog (GimpDrawable *drawable)
+static gboolean koi_dialog (GimpDrawable *drawable)
 {
   GtkWidget *dialog;
   GtkWidget *main_vbox;
@@ -637,7 +758,7 @@ koi_dialog (GimpDrawable *drawable)
   gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), main_vbox);
   gtk_widget_show (main_vbox);
 
-  preview = gimp_drawable_preview_new (drawable, &gvalues.preview);
+  preview = gimp_drawable_preview_new (drawable, &gui_options.preview);
   gtk_box_pack_start (GTK_BOX (main_vbox), preview, TRUE, TRUE, 0);
   gtk_widget_show (preview);
 
@@ -679,7 +800,7 @@ koi_dialog (GimpDrawable *drawable)
 //  gtk_box_pack_start (GTK_BOX (main_hbox), radius_label, FALSE, FALSE, 6);
 //  gtk_label_set_justify (GTK_LABEL (radius_label), GTK_JUSTIFY_RIGHT);
 //
-//  spinbutton = gimp_spin_button_new (&spinbutton_adj, gvalues.radius, 1, 32, 1, 1, 1, 5, 0);
+//  spinbutton = gimp_spin_button_new (&spinbutton_adj, gui_options.radius, 1, 32, 1, 1, 1, 5, 0);
 //  gtk_box_pack_start (GTK_BOX (main_hbox), spinbutton, FALSE, FALSE, 0);
 //  gtk_widget_show (spinbutton);
 
@@ -696,13 +817,13 @@ koi_dialog (GimpDrawable *drawable)
 
   koi (drawable, GIMP_PREVIEW (preview));
 
-//  g_signal_connect (spinbutton_adj, "value_changed", G_CALLBACK (gimp_int_adjustment_update), &gvalues.radius);
+//  g_signal_connect (spinbutton_adj, "value_changed", G_CALLBACK (gimp_int_adjustment_update), &gui_options.radius);
 
 
 
 
-  g_signal_connect (texture_check_button, "clicked", G_CALLBACK (texture_check_button_callback), &gvalues);
-   g_signal_connect (clone_check_button, "clicked", G_CALLBACK (clone_check_button_callback), &gvalues);
+  g_signal_connect (texture_check_button, "clicked", G_CALLBACK (texture_check_button_callback), &gui_options);
+   g_signal_connect (clone_check_button, "clicked", G_CALLBACK (clone_check_button_callback), &gui_options);
 
   gtk_widget_show (dialog);
 
