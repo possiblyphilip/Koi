@@ -16,64 +16,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <libgimp/gimp.h>
-#include <libgimp/gimpui.h>
-
-#include <stdlib.h>
-
-typedef struct
-{
-    gboolean preview;
-    gboolean texture_checked;
-    gboolean clone_checked;
-} GUI_values;
-
-typedef struct
-{
-    guchar ***array_in;
-    guchar ***array_out;
-    int start_row;
-    int start_colum;
-    int height;
-    int width;
-    float percent;
-}JOB_ARG;
-
-static void query (void);
-static void run (const guchar *name,  int nparams, const GimpParam  *param,  int *nreturn_vals, GimpParam **return_vals);
-
-static void koi (GimpDrawable  *drawable, GimpPreview  *preview);
-
-
-static gboolean koi_dialog (GimpDrawable *drawable);
-static void texture_check_button_callback( GtkWidget *widget,  gpointer   data );
-static void clone_check_button_callback( GtkWidget *widget,  gpointer   data );
-
-void * find_blur_job(void *pArg);
-void * find_clone_job(void *pArg);
-void free_pixel_array(guchar ***array, int width, int height, int depth);
-void allocate_pixel_array(guchar ****array, int width, int height, int depth);
-
-/* Set up default values for options */
-static GUI_values gui_options =
-{
-  0,  //preview
-  0,   //texture
-    0   //clone
-};
-
-GimpPlugInInfo PLUG_IN_INFO =
-{
-  NULL,
-  NULL,
-  query,
-  run
-};
+#include "Koi.h"
 
 MAIN()
 
-static void
-query (void)
+static void query (void)
 {
   static GimpParamDef args[] =
   {
@@ -110,7 +57,7 @@ query (void)
   gimp_plugin_menu_register ("plug-in-Koi", "<Image>/Filters/Misc");
 }
 
-static void run (const guchar *name, int nparams, const GimpParam *param,  int *nreturn_vals, GimpParam **return_vals)
+static void run (const char *name, int nparams, const GimpParam *param,  int *nreturn_vals, GimpParam **return_vals)
 {
     static GimpParam  values[1];
     GimpPDBStatusType status = GIMP_PDB_SUCCESS;
@@ -135,7 +82,7 @@ static void run (const guchar *name, int nparams, const GimpParam *param,  int *
     {
     case GIMP_RUN_INTERACTIVE:
 	/* Get options last values if needed */
-	gimp_get_data ("plug-in-Koi", &gui_options);
+//	gimp_get_data ("plug-in-Koi", &gui_options);
 
 	/* Display the dialog */
 	if (! koi_dialog (drawable))
@@ -479,78 +426,143 @@ void * find_clone_job(void *pArg)
     int block_row,block_col;
     int counter = 0;
     int temp = 0;
-    int from_row, to_row, from_col, to_col, channel;
+    int from_row, to_row, from_col, to_col;
+    int num_blocks;
+    int ii;
+
+    clone_block_metric *block_metric_array;
+
+    clone_block_metric slider[block_size];
 
 
     //get the argument passed in, and set our local variables
     JOB_ARG* job_args = (JOB_ARG*)pArg;
 
 
-//    for (from_row = 0; from_row < job_args->height ; from_row++)
-//    {
-//	for (from_col = job_args->start_colum; from_col < job_args->start_colum+job_args->width; from_col++)
-//	{
-//	    job_args->array_out[from_col][from_row][0] = job_args->array_in[from_col][from_row][0];
-//	    job_args->array_out[from_col][from_row][1] = 255;
-//	    job_args->array_out[from_col][from_row][2] = 0;
-//
-//	}
-//    }
+    //this should create a few more blocks than im going to need but memory is cheap :)
+    num_blocks = ((job_args->height/(float)block_size)+1)*((job_args->width/(float)block_size)+1);
 
 
-    for (from_row = 0; from_row < job_args->height-block_size; from_row++)
+    block_metric_array = (clone_block_metric*)malloc (num_blocks * sizeof(clone_block_metric));
+
+    //set them all to zero
+
+    for(ii = 0; ii < num_blocks; ii++)
     {
-	for (from_col = job_args->start_colum; from_col < job_args->start_colum+job_args->width-block_size; from_col++)
+	block_metric_array[ii].metric =  0;
+    }
+
+    ii = 0;
+
+    for (from_row = 0; from_row < job_args->height-block_size ; from_row+=block_size)
+    {
+	for (from_col = job_args->start_colum; from_col < job_args->start_colum+job_args->width-block_size; from_col+=block_size)
 	{
-	    for (to_row = from_row; to_row < job_args->height-block_size; to_row++)
+
+	    //calculate metric (just summing the gren values)
+	    for (block_row = 0; block_row < block_size; block_row++)
 	    {
-		for (to_col = job_args->start_colum; to_col < job_args->start_colum+job_args->width-block_size; to_col++)
+		for (block_col = 0; block_col < block_size; block_col++)
 		{
-		    if(from_row != to_row || from_col != to_col)
-		    {
-			temp = 0;
-			for (block_row = 0; block_row < block_size ; block_row++)
-			{
-			    for (block_col = 0; block_col < block_size && temp==0; block_col++)
-			    {
-
-				temp += (job_args->array_in[from_col+block_col][from_row+block_row][0] - job_args->array_in[to_col+block_col][to_row+block_row][0]);
-
-			    }
-			}
-
-			if(temp == 0)
-			{
-			    for (block_row = 0; block_row < block_size ; block_row++)
-			    {
-				for (block_col = 0; block_col < block_size; block_col++)
-				{
-				    job_args->array_out[to_col+block_col][to_row+block_row][0] = 255;
-				    job_args->array_out[to_col+block_col][to_row+block_row][1] = 115;
-				    job_args->array_out[to_col+block_col][to_row+block_row][2] = 0;
-				    job_args->array_out[to_col+block_col][to_row+block_row][3] = 0;
-				}
-			    }
-			}
-		    }
-
-
-//		    else
-//		    {
-//
-//			job_args->array_out[to_col][to_row][0] = 0;
-//			job_args->array_out[to_col][to_row][1] = 0;
-//			job_args->array_out[to_col][to_row][2] = 255;
-//			job_args->array_out[to_col][to_row][3] = 0;
-//		    }
+		    block_metric_array[ii].row = from_row;
+		    block_metric_array[ii].col = from_col;
+		    block_metric_array[ii].metric += job_args->array_in[from_col+block_col][from_row+block_row][1];
 		}
 	    }
+	    ii++;
+
 	}
-//	if (from_row % 10 == 0)
-//	{
-//	    gimp_progress_update ((gdouble) from_row / job_args->height);
-//	}
     }
+
+    /* sort array using qsort functions */
+    qsort(block_metric_array, num_blocks, sizeof(clone_block_metric), clone_metric_comp);
+
+
+//    for(ii = 0; ii < block_size; ii++)
+//    {
+//	slider[ii] = block_metric[ii] =  0;
+//    }
+
+    ii = 0;
+    for (to_row = 0; to_row < job_args->height-block_size ; to_row+=block_size)
+    {
+	for (to_col = job_args->start_colum; to_col < job_args->start_colum+job_args->width-block_size; to_col+=block_size)
+	{
+	    for (block_row = 0; block_row < block_size; block_row++)
+	    {
+		for (block_col = 0; block_col < block_size; block_col++)
+		{
+		    if(block_metric_array[ii].col+block_col  < job_args->start_colum+job_args->width-block_size)
+		    {
+			if( block_metric_array[ii].row+block_row <  job_args->height-block_size)
+			{
+			    job_args->array_out[to_col+block_col][to_row+block_row][0] = job_args->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][0];
+			    job_args->array_out[to_col+block_col][to_row+block_row][1] = job_args->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][1];
+			    job_args->array_out[to_col+block_col][to_row+block_row][2] = job_args->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][2];
+
+			}
+		    }
+		}
+	    }
+
+	    ii++;
+	    if(ii >= num_blocks)
+	    {
+		g_message("over ran blocks");
+	    }
+
+	}
+    }
+
+
+
+//
+//
+//    for (from_row = 0; from_row < job_args->height-block_size; from_row++)
+//    {
+//	for (from_col = job_args->start_colum; from_col < job_args->start_colum+job_args->width-block_size; from_col++)
+//	{
+//	    for (to_row = from_row; to_row < job_args->height-block_size; to_row++)
+//	    {
+//		for (to_col = job_args->start_colum; to_col < job_args->start_colum+job_args->width-block_size; to_col++)
+//		{
+//		    if(from_row != to_row || from_col != to_col)
+//		    {
+//			temp = 0;
+//			for (block_row = 0; block_row < block_size ; block_row++)
+//			{
+//			    for (block_col = 0; block_col < block_size && temp==0; block_col++)
+//			    {
+//
+//				temp += (job_args->array_in[from_col+block_col][from_row+block_row][1] - job_args->array_in[to_col+block_col][to_row+block_row][1]);
+//
+//			    }
+//			}
+//
+//			if(temp == 0)
+//			{
+//			    for (block_row = 0; block_row < block_size ; block_row++)
+//			    {
+//				for (block_col = 0; block_col < block_size; block_col++)
+//				{
+//				    job_args->array_out[to_col+block_col][to_row+block_row][0] = 255;
+//				    job_args->array_out[to_col+block_col][to_row+block_row][1] = 115;
+//				    job_args->array_out[to_col+block_col][to_row+block_row][2] = 0;
+//				    job_args->array_out[to_col+block_col][to_row+block_row][3] = 0;
+//
+//				    job_args->array_out[from_col+block_col][from_row+block_row][0] = 50;
+//				    job_args->array_out[from_col+block_col][from_row+block_row][1] = 90;
+//				    job_args->array_out[from_col+block_col][from_row+block_row][2] = 170;
+//				    job_args->array_out[from_col+block_col][from_row+block_row][3] = 0;
+//				}
+//			    }
+//			}
+//		    }
+//		}
+//	    }
+//	}
+//
+//    }
 
 
     return NULL;
@@ -723,6 +735,17 @@ void free_pixel_array(guchar ***array, int width, int height, int depth)
 	free(array[ii]);
     }
     free(array);
+}
+
+int clone_metric_comp(const void *a, const void *b)
+
+{
+	    clone_block_metric* ia = (clone_block_metric *)a; // casting pointer types
+	    clone_block_metric* ib = (clone_block_metric *)b;
+	    return ia->metric  - ib->metric;
+
+		/* integer comparison: returns negative if b > a
+		and positive if a > b */
 }
 
 static gboolean koi_dialog (GimpDrawable *drawable)
