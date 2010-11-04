@@ -81,6 +81,8 @@ void * find_clone_job(void *pArg);
 void free_pixel_array(guchar ***array, int width, int height, int depth);
 void allocate_pixel_array(guchar ****array, int width, int height, int depth);
 
+int RGBtoHSL( guchar r, guchar g, guchar b);
+
 
 
 int clone_metric_comp(const void *a, const void *b);

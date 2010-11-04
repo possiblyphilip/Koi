@@ -430,6 +430,10 @@ void * find_clone_job(void *pArg)
     int num_blocks;
     int ii;
 
+    int min, max;
+
+    guchar red, green, blue;
+
     clone_block_metric *block_metric_array;
 
     clone_block_metric slider[block_size];
@@ -440,7 +444,8 @@ void * find_clone_job(void *pArg)
 
 
     //this should create a few more blocks than im going to need but memory is cheap :)
-    num_blocks = ((job_args->height/(float)block_size)+1)*((job_args->width/(float)block_size)+1);
+    num_blocks = ((float)job_args->height/block_size)*((float)job_args->width/block_size);
+  //  num_blocks *=2;
 
 
     block_metric_array = (clone_block_metric*)malloc (num_blocks * sizeof(clone_block_metric));
@@ -449,7 +454,9 @@ void * find_clone_job(void *pArg)
 
     for(ii = 0; ii < num_blocks; ii++)
     {
-	block_metric_array[ii].metric =  0;
+	block_metric_array[ii].metric = 0;
+	block_metric_array[ii].col = 0;
+	block_metric_array[ii].row = 0;
     }
 
     ii = 0;
@@ -460,15 +467,59 @@ void * find_clone_job(void *pArg)
 	{
 
 	    //calculate metric (just summing the gren values)
+	    min = 300;
+	    max = 0;
 	    for (block_row = 0; block_row < block_size; block_row++)
 	    {
 		for (block_col = 0; block_col < block_size; block_col++)
 		{
-		    block_metric_array[ii].row = from_row;
-		    block_metric_array[ii].col = from_col;
-		    block_metric_array[ii].metric += job_args->array_in[from_col+block_col][from_row+block_row][1];
+
+			    block_metric_array[ii].row = from_row;
+			    block_metric_array[ii].col = from_col;
+			    //this should make the color spaces sort out different from each other
+			    red = job_args->array_in[from_col+block_col][from_row+block_row][0];
+			    green = job_args->array_in[from_col+block_col][from_row+block_row][1];
+			    blue = job_args->array_in[from_col+block_col][from_row+block_row][2];
+
+			    if(red > max)
+			    {
+				max = red;
+			    }
+
+			    if(green > max)
+			    {
+				max = green;
+			    }
+
+			    if(blue > max)
+			    {
+				max = blue;
+			    }
+			//min
+			    if(red < min)
+			    {
+				min = red;
+			    }
+			    if(green < min)
+			    {
+				min = green;
+			    }
+			    if(blue < min)
+			    {
+				min = blue;
+			    }
+
+
+			//    block_metric_array[ii].metric += green;
+				block_metric_array[ii].metric += 1;
+//			    block_metric_array[ii].metric += RGBtoHSL(red, green, blue);
+
 		}
 	    }
+
+
+
+	    block_metric_array[ii].metric /= (max-min);
 	    ii++;
 
 	}
@@ -492,25 +543,27 @@ void * find_clone_job(void *pArg)
 	    {
 		for (block_col = 0; block_col < block_size; block_col++)
 		{
-		    if(block_metric_array[ii].col+block_col  < job_args->start_colum+job_args->width-block_size)
-		    {
-			if( block_metric_array[ii].row+block_row <  job_args->height-block_size)
-			{
+//		    if(block_metric_array[ii].col+block_col  < job_args->start_colum+job_args->width-block_size)
+//		    {
+//			if( block_metric_array[ii].row+block_row <  job_args->height-block_size)
+//			{
 			    job_args->array_out[to_col+block_col][to_row+block_row][0] = job_args->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][0];
 			    job_args->array_out[to_col+block_col][to_row+block_row][1] = job_args->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][1];
 			    job_args->array_out[to_col+block_col][to_row+block_row][2] = job_args->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][2];
 
-			}
-		    }
+//			}
+//			else
+//			{
+//			    g_message("stepped out of image");
+//			}
+//		    }
+//		    else
+//		    {
+//			g_message("stepped out of image");
+//		    }
 		}
 	    }
-
 	    ii++;
-	    if(ii >= num_blocks)
-	    {
-		g_message("over ran blocks");
-	    }
-
 	}
     }
 
@@ -709,7 +762,7 @@ void allocate_pixel_array(guchar ****array, int width, int height, int depth)
 	    arr[ii][jj]= (guchar *)malloc (depth * sizeof(guchar));
 	    for (kk = 0; kk < depth; ++kk)
 	    {
-		arr[ii][jj][kk] = 0;
+		arr[ii][jj][kk] = kk*100;
 	    }
 	}
     }
@@ -887,4 +940,97 @@ static void clone_check_button_callback( GtkWidget *widget,  gpointer   data )
     {
 	temp_vals->clone_checked = FALSE;
     }
+}
+
+int RGBtoHSL( guchar r, guchar g, guchar b)
+{
+
+    double L = 0;
+    double S = 0;
+    double H = 0;
+
+    double max_color = 0;
+
+    double min_color = 0;
+
+    double r_percent = ((double)r)/255;
+    double g_percent = ((double)g)/255;
+    double b_percent = ((double)b)/255;
+
+
+    if((r_percent >= g_percent) && (r_percent >= b_percent))
+    {
+	max_color = r_percent;
+    }
+
+    if((g_percent >= r_percent) && (g_percent >= b_percent))
+
+    {
+	max_color = g_percent;
+    }
+
+    if((b_percent >= r_percent) && (b_percent >= g_percent))
+    {
+
+	max_color = b_percent;
+    }
+
+    if((r_percent <= g_percent) && (r_percent <= b_percent))
+    {
+	min_color = r_percent;
+    }
+
+    if((g_percent <= r_percent) && (g_percent <= b_percent))
+    {
+	min_color = g_percent;
+    }
+
+    if((b_percent <= r_percent) && (b_percent <= g_percent))
+    {
+	min_color = b_percent;
+    }
+
+    L = (max_color + min_color)/2;
+
+    if(max_color == min_color)
+    {
+	S = 0;
+	H = 0;
+    }
+    else
+    {
+	if(L < .50)
+	{
+	    S = (max_color - min_color)/(max_color + min_color);
+	}
+	else
+	{
+	    S = (max_color - min_color)/(2 - max_color - min_color);
+	}
+
+	if(max_color == r_percent)
+	{
+	    H = (g_percent - b_percent)/(max_color - min_color);
+	}
+
+	if(max_color == g_percent)
+	{
+	    H = 2 + (b_percent - r_percent)/(max_color - min_color);
+	}
+
+	if(max_color == b_percent)
+	{
+	    H = 4 + (r_percent - g_percent)/(max_color - min_color);
+	}
+    }
+
+//    s = (guchar)(S*100);
+//    l = (guchar)(L*100);
+    H = H*60;
+    if(H < 0)
+    {
+	H += 360;
+    }
+
+    return (int)H;
 }
