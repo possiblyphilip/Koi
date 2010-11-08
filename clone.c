@@ -41,7 +41,7 @@ void * find_clone_job(void *pArg)
 	block_metric_array[ii].h_metric = 0;
 	block_metric_array[ii].s_metric = 0;
 	block_metric_array[ii].l_metric = 0;
-	block_metric_array[ii].contrast_metric = 0;
+	block_metric_array[ii].metric = 0;
 	block_metric_array[ii].col = 0;
 	block_metric_array[ii].row = 0;
     }
@@ -195,44 +195,52 @@ void * find_clone_job(void *pArg)
 
     for(ii = 1; ii< num_blocks; ii++)
     {
-	if( block_metric_array[ii].metric != 0 ||  block_metric_array[ii-1].metric != 0)
+	if( block_metric_array[ii].metric != 0 &&  block_metric_array[ii].metric != 255*3*block_size*block_size)
 	{
+
 	    if( block_metric_array[ii].metric ==  block_metric_array[ii-1].metric)
 	    {
-		temp = 0;
-		for (block_row = 0; block_row < block_size ; block_row++)
+		if(abs(block_metric_array[ii].col-block_metric_array[ii-1].col) > block_size || abs(block_metric_array[ii].row-block_metric_array[ii-1].row) > block_size)
 		{
-		    for (block_col = 0; block_col < block_size; block_col++)
+		//    if(abs(block_metric_array[ii].row-block_metric_array[ii-1].row) > 2)
 		    {
-
-			temp += abs(job_args->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][1] - job_args->array_in[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row][1]);
-
-		    }
-		}
-		if(temp == 0)
-		{
-		    for (block_row = 0; block_row < block_size ; block_row++)
-		    {
-			for (block_col = 0; block_col < block_size; block_col++)
+			temp = 0;
+			for (block_row = 0; block_row < block_size ; block_row++)
 			{
+			    for (block_col = 0; block_col < block_size; block_col++)
+			    {
 
-			    job_args->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][0] = 50;
-			    job_args->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][1] = 190;
-			    job_args->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][2] = 170;
+				temp += abs(job_args->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][1] - job_args->array_in[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row][1]);
 
-			    job_args->array_out[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row][0] = 255;
-			    job_args->array_out[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row][1] = 115;
-			    job_args->array_out[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row][2] = 0;
+			    }
+			}
+			if(temp < 1*block_size*block_size)
+			{
+			    for (block_row = 0; block_row < block_size ; block_row++)
+			    {
+				for (block_col = 0; block_col < block_size; block_col++)
+				{
 
+				    job_args->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][0] = 50;
+				    job_args->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][1] = 190;
+				    job_args->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][2] = 170;
+
+				    job_args->array_out[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row][0] = 255;
+				    job_args->array_out[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row][1] = 115;
+				    job_args->array_out[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row][2] = 0;
+
+				}
+			    }
 			}
 		    }
 		}
+
 	    }
 	}
 
     }
 
-//		    g_message("survived\n");
+    //		    g_message("survived\n");
 
 
 //

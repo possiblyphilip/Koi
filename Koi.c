@@ -199,23 +199,6 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
     }
 
-    if(gui_options.texture_checked == TRUE)
-    {
-	gimp_run_procedure("gimp-desaturate",&num_return_vals, GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_END);
-	gimp_run_procedure("plug-in-edge",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_FLOAT, 9.99, GIMP_PDB_INT32, 2, GIMP_PDB_INT32, 5, GIMP_PDB_END);
-    }
-
-    channels = gimp_drawable_bpp (drawable->drawable_id);
-
-
-
-    /* Initialises two PixelRgns, one to read original data,
-   * and the other to write output data. That second one will
-   * be merged at the end by the call to
-   * gimp_drawable_merge_shadow() */
-    gimp_pixel_rgn_init (&rgn_in, drawable, start_colum, start_row, width, height, FALSE, FALSE);
-    gimp_pixel_rgn_init (&rgn_out, drawable,  start_colum, start_row, width, height, preview == NULL, TRUE);
-
     if(width < 10 || height < 10)
     {
 //i need to do something smarter here
@@ -226,6 +209,48 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 //make an array to hold all the pixels
     allocate_pixel_array(&in_array,width, height, 4);
     allocate_pixel_array(&out_array,width, height, 4);
+
+    /* Initialises two PixelRgns, one to read original data,
+   * and the other to write output data. That second one will
+   * be merged at the end by the call to
+   * gimp_drawable_merge_shadow() */
+    gimp_pixel_rgn_init (&rgn_in, drawable, start_colum, start_row, width, height, FALSE, FALSE);
+    gimp_pixel_rgn_init (&rgn_out, drawable,  start_colum, start_row, width, height, preview == NULL, TRUE);
+
+    if(gui_options.texture_checked == TRUE)
+    {
+
+	gimp_progress_set_text("filling secondary Koi array");
+
+	for (row = 0; row < height; row++)
+	{
+	    for (col = 0; col < width; col++)
+	    {
+		gimp_pixel_rgn_get_pixel (&rgn_in, pixel, start_colum+col,start_row+row);
+
+		for(channel = 0; channel < 4; channel++)
+		{
+		    out_array[col][row][channel] = pixel[channel];
+		}
+	    }
+
+	    if (row % 10 == 0)
+	    {
+		gimp_progress_update ((gdouble) (row - start_row) / (gdouble) (x2 - start_colum));
+	    }
+	}
+
+	gimp_run_procedure("gimp-desaturate",&num_return_vals, GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_END);
+	gimp_run_procedure("plug-in-edge",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_FLOAT, 9.99, GIMP_PDB_INT32, 2, GIMP_PDB_INT32, 5, GIMP_PDB_END);
+    }
+
+    channels = gimp_drawable_bpp (drawable->drawable_id);
+
+
+
+
+
+
 
 //dump the gimp image data into my own array for processing
     gimp_progress_set_text("filling Koi array");
@@ -248,6 +273,8 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 		gimp_progress_update ((gdouble) (row - start_row) / (gdouble) (x2 - start_colum));
 	    }
 	}
+
+	g_message("filled primary array");
 //    }
 //    else
 //    {
@@ -410,7 +437,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 //	gimp_run_procedure("plug-in-colortoalpha",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_COLOR, pixel[0], GIMP_PDB_END);
 	if(gui_options.texture_checked == TRUE)
 	{
-	    gimp_run_procedure("plug-in-despeckle",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_INT32, 5, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 255,  GIMP_PDB_END);
+	    gimp_run_procedure("plug-in-despeckle",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_INT32, 20, GIMP_PDB_INT32, 3, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 158,  GIMP_PDB_END);
 	}
     }
 
@@ -461,20 +488,53 @@ void * find_blur_job(void *pArg)
 		    temp = slider[ii];
 		}
 	    }
-//set the color to red because its been messed with
-	    if(temp < 110)
+//		    temp =+ slider[ii];
+//
+//	    }
+//
+//	    temp /= size;
+
+	    //set the color to red because its been messed with
+	    if(temp < 90)
 	    {
-		job_args->array_out[col][row][0] = 255;
-		job_args->array_out[col][row][1] = 0;
-		job_args->array_out[col][row][2] = 0;
-		job_args->array_out[col][row][3] = 255;
+		if(job_args->array_out[col][row][0] == 255 && job_args->array_out[col][row][1] == 255 && job_args->array_out[col][row][2] == 255)
+		{
+				//pixels are all white and info is gone
+		    job_args->array_out[col][row][0] = 110;
+		    job_args->array_out[col][row][1] = 255;
+		    job_args->array_out[col][row][2] = 90;
+
+
+		}
+
+		else
+		{
+		    if(job_args->array_out[col][row][0] == 0 && job_args->array_out[col][row][1] == 0 && job_args->array_out[col][row][2] == 0)
+		    {
+			//pixels are all black and info is gone
+			job_args->array_out[col][row][0] = 30;
+			job_args->array_out[col][row][1] = 75;
+			job_args->array_out[col][row][2] = 30;
+		    }
+		    else
+		    {
+			job_args->array_out[col][row][0] = 255;
+			job_args->array_out[col][row][1] = 0;
+			job_args->array_out[col][row][2] = 0;
+//			job_args->array_out[col][row][0] = temp;
+//			job_args->array_out[col][row][1] = temp;
+//			job_args->array_out[col][row][2] = temp;
+
+		    }
+		}
 	    }
+	    //pixels are good
 	    else
 	    {
 		job_args->array_out[col][row][0] = 80;
 		job_args->array_out[col][row][1] = 190;
 		job_args->array_out[col][row][2] = 70;
-		job_args->array_out[col][row][3] = 0;
+
 	    }
 
 	    //this will reset my slider counter so i dont have to make a queue or anything slow like that
@@ -483,6 +543,7 @@ void * find_blur_job(void *pArg)
 
 	}
     }
+
     //###################
 // now do the same image block virtically
 //set my slider to zero
@@ -508,23 +569,29 @@ void * find_blur_job(void *pArg)
 		    temp = slider[ii];
 		}
 	    }
+//		temp =+ slider[ii];
+//
+//	}
+//
+//	temp /= size;
 	    //set the color to red because its been messed with
-	    if(temp < 110)
+	    if(temp < 90)
 	    {
 //if the pixel is already green we dont want to set it to red, we will set it to grey instead
-		if(job_args->array_out[col][row][0] != 80)
+		if(job_args->array_out[col][row][1] == 75 || job_args->array_out[col][row][1] == 255  || job_args->array_out[col][row][1] == 190 )
+		{
+		    job_args->array_out[col][row][0] = 80;
+		    job_args->array_out[col][row][1] = 190;
+		    job_args->array_out[col][row][2] = 70;
+		}
+		else
 		{
 		    job_args->array_out[col][row][0] = 255;
 		    job_args->array_out[col][row][1] = 0;
 		    job_args->array_out[col][row][2] = 0;
-		    job_args->array_out[col][row][3] = 255;
-		}
-		else
-		{
-		    job_args->array_out[col][row][0] = 30;
-		    job_args->array_out[col][row][1] = 30;
-		    job_args->array_out[col][row][2] = 30;
-		    job_args->array_out[col][row][3] = 255;
+//		    job_args->array_out[col][row][0] = temp;
+//		    job_args->array_out[col][row][1] = temp;
+//		    job_args->array_out[col][row][2] = temp;
 		}
 	    }
 	    else
@@ -532,7 +599,6 @@ void * find_blur_job(void *pArg)
 		job_args->array_out[col][row][0] = 80;
 		job_args->array_out[col][row][1] = 190;
 		job_args->array_out[col][row][2] = 70;
-		job_args->array_out[col][row][3] = 0;
 	    }
 
 	    //this will reset my slider counter so i dont have to make a queue or anything slow like that
@@ -629,7 +695,7 @@ static gboolean koi_dialog (GimpDrawable *drawable)
   preview = gimp_drawable_preview_new (drawable, &gui_options.preview);
   gtk_box_pack_start (GTK_BOX (main_vbox), preview, TRUE, TRUE, 0);
   gtk_widget_show (preview);
-  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(preview), FALSE);
+  //gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(preview), FALSE);
 
   frame = gtk_frame_new (NULL);
   gtk_widget_show (frame);
