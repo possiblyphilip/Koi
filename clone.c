@@ -1,9 +1,27 @@
+/*
+  Koi - a GIMP image authentication plugin
+    Copyright (C) 2010  ben howard
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "clone.h"
 
 void * find_clone_job(void *pArg)
 {
 
-    int block_size = 20;
+    int block_size = 16;
 
     int block_row,block_col;
     int counter = 0;
@@ -202,37 +220,36 @@ void * find_clone_job(void *pArg)
 	    {
 		if(abs(block_metric_array[ii].col-block_metric_array[ii-1].col) > block_size || abs(block_metric_array[ii].row-block_metric_array[ii-1].row) > block_size)
 		{
-		//    if(abs(block_metric_array[ii].row-block_metric_array[ii-1].row) > 2)
+
+		    temp = 0;
+		    for (block_row = 0; block_row < block_size ; block_row++)
 		    {
-			temp = 0;
+			for (block_col = 0; block_col < block_size; block_col++)
+			{
+
+			    temp += abs(job_args->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][1] - job_args->array_in[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row][1]);
+
+			}
+		    }
+		    if(temp <= 150)
+		    {
 			for (block_row = 0; block_row < block_size ; block_row++)
 			{
 			    for (block_col = 0; block_col < block_size; block_col++)
 			    {
 
-				temp += abs(job_args->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][1] - job_args->array_in[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row][1]);
+				job_args->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][0] = 50;
+				job_args->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][1] = 190;
+				job_args->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][2] = 170;
 
-			    }
-			}
-			if(temp < 1*block_size*block_size)
-			{
-			    for (block_row = 0; block_row < block_size ; block_row++)
-			    {
-				for (block_col = 0; block_col < block_size; block_col++)
-				{
+				job_args->array_out[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row][0] = 255;
+				job_args->array_out[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row][1] = 115;
+				job_args->array_out[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row][2] = 0;
 
-				    job_args->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][0] = 50;
-				    job_args->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][1] = 190;
-				    job_args->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][2] = 170;
-
-				    job_args->array_out[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row][0] = 255;
-				    job_args->array_out[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row][1] = 115;
-				    job_args->array_out[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row][2] = 0;
-
-				}
 			    }
 			}
 		    }
+
 		}
 
 	    }
