@@ -158,43 +158,6 @@ void * find_clone_job(void *pArg)
 //		    g_message("sorted them\n");
 
 
-//    for(ii = 0; ii < block_size; ii++)
-//    {
-//	slider[ii] = block_metric[ii] =  0;
-//    }
-
-//    ii = 0;
-//    for (to_row = 0; to_row < job_args->height-block_size ; to_row+=block_size)
-//    {
-//	for (to_col = job_args->start_colum; to_col < job_args->start_colum+job_args->width-block_size; to_col+=block_size)
-//	{
-//	    for (block_row = 0; block_row < block_size; block_row++)
-//	    {
-//		for (block_col = 0; block_col < block_size; block_col++)
-//		{
-////		    if(block_metric_array[ii].col+block_col  < job_args->start_colum+job_args->width-block_size)
-////		    {
-////			if( block_metric_array[ii].row+block_row <  job_args->height-block_size)
-////			{
-//			    job_args->array_out[to_col+block_col][to_row+block_row][0] = job_args->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][0];
-//			    job_args->array_out[to_col+block_col][to_row+block_row][1] = job_args->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][1];
-//			    job_args->array_out[to_col+block_col][to_row+block_row][2] = job_args->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][2];
-//
-////			}
-////			else
-////			{
-////			    g_message("stepped out of image");
-////			}
-////		    }
-////		    else
-////		    {
-////			g_message("stepped out of image");
-////		    }
-//		}
-//	    }
-//	    ii++;
-//	}
-//    }
 
 
 
@@ -260,53 +223,7 @@ void * find_clone_job(void *pArg)
     //		    g_message("survived\n");
 
 
-//
-//
-//    for (from_row = 0; from_row < job_args->height-block_size; from_row++)
-//    {
-//	for (from_col = job_args->start_colum; from_col < job_args->start_colum+job_args->width-block_size; from_col++)
-//	{
-//	    for (to_row = from_row; to_row < job_args->height-block_size; to_row++)
-//	    {
-//		for (to_col = job_args->start_colum; to_col < job_args->start_colum+job_args->width-block_size; to_col++)
-//		{
-//		    if(from_row != to_row || from_col != to_col)
-//		    {
-//			temp = 0;
-//			for (block_row = 0; block_row < block_size ; block_row++)
-//			{
-//			    for (block_col = 0; block_col < block_size && temp==0; block_col++)
-//			    {
-//
-//				temp += (job_args->array_in[from_col+block_col][from_row+block_row][1] - job_args->array_in[to_col+block_col][to_row+block_row][1]);
-//
-//			    }
-//			}
-//
-//			if(temp == 0)
-//			{
-//			    for (block_row = 0; block_row < block_size ; block_row++)
-//			    {
-//				for (block_col = 0; block_col < block_size; block_col++)
-//				{
-//				    job_args->array_out[to_col+block_col][to_row+block_row][0] = 255;
-//				    job_args->array_out[to_col+block_col][to_row+block_row][1] = 115;
-//				    job_args->array_out[to_col+block_col][to_row+block_row][2] = 0;
-//				    job_args->array_out[to_col+block_col][to_row+block_row][3] = 0;
-//
-//				    job_args->array_out[from_col+block_col][from_row+block_row][0] = 50;
-//				    job_args->array_out[from_col+block_col][from_row+block_row][1] = 90;
-//				    job_args->array_out[from_col+block_col][from_row+block_row][2] = 170;
-//				    job_args->array_out[from_col+block_col][from_row+block_row][3] = 0;
-//				}
-//			    }
-//			}
-//		    }
-//		}
-//	    }
-//	}
-//
-//    }
+
 
 
     return NULL;
