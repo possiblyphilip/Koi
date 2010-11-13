@@ -28,6 +28,7 @@ typedef struct
 {
     gboolean preview;
     gboolean texture_checked;
+	int texture_threshold;
     gboolean clone_checked;
 } GUI_values;
 
@@ -40,6 +41,7 @@ typedef struct
     int height;
     int width;
     float percent;
+    GUI_values gui_options;
 }JOB_ARG;
 
 /* Set up default values for options */
@@ -66,8 +68,7 @@ static void koi (GimpDrawable  *drawable, GimpPreview  *preview);
 
 
 static gboolean koi_dialog (GimpDrawable *drawable);
-static void texture_check_button_callback( GtkWidget *widget,  gpointer   data );
-static void clone_check_button_callback( GtkWidget *widget,  gpointer   data );
+
 
 void * find_blur_job(void *pArg);
 void * find_clone_job(void *pArg);

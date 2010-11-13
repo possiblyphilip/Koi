@@ -32,10 +32,10 @@ static gboolean koi_dialog (GimpDrawable *drawable)
     GtkWidget *h_box;
 	GtkWidget *v_box;
 
-  GtkWidget *hscale;
+  GtkWidget *texture_hscale;
   GtkWidget *notebook;
 
-      GtkObject *adj1;
+      GtkObject *texture_threshold_value;
 
     GtkWidget *texture_check_button;
     GtkWidget *clone_check_button;
@@ -109,15 +109,17 @@ static gboolean koi_dialog (GimpDrawable *drawable)
      /* Note that the page_size value only makes a difference for
       * scrollbar widgets, and the highest value you'll get is actually
       * (upper - page_size). */
-  //    adj1 = gtk_adjustment_new (0.0, 0.0, 101.0, 0.1, 1.0, 1.0);
+  //    texture_threshold_value = gtk_adjustment_new (0.0, 0.0, 101.0, 0.1, 1.0, 1.0);
 
 
-  adj1 = gtk_adjustment_new (110, 0, 256, 2, 2, 2);
-  hscale = gtk_hscale_new (GTK_ADJUSTMENT (adj1));
-  gtk_widget_set_size_request (hscale, 100, 40);
-	 gtk_widget_show (hscale);
+  texture_threshold_value = gtk_adjustment_new (110, 0, 256, 1, 1, 1);
+  texture_hscale = gtk_hscale_new (GTK_ADJUSTMENT (texture_threshold_value));
+//  gtk_scale_set_digits( GTK_SCALE(texture_hscale), 3);
+//  gtk_range_set_update_policy      (GtkRange      *range,   GtkUpdateType  policy);
+  gtk_widget_set_size_request (texture_hscale, 100, 40);
+	 gtk_widget_show (texture_hscale);
 
-gtk_container_add (GTK_CONTAINER (tab_box), hscale);
+gtk_container_add (GTK_CONTAINER (tab_box), texture_hscale);
 
 
   //then add the page to the notbook
@@ -196,8 +198,13 @@ gtk_container_add (GTK_CONTAINER (tab_box), hscale);
 
 
 
-  g_signal_connect (texture_check_button, "clicked", G_CALLBACK (texture_check_button_callback), &gui_options);
-  g_signal_connect (clone_check_button, "clicked", G_CALLBACK (clone_check_button_callback), &gui_options);
+  g_signal_connect (texture_check_button, "clicked", G_CALLBACK (cb_texture_check_button), &gui_options);
+  g_signal_connect (clone_check_button, "clicked", G_CALLBACK (cb_clone_check_button), &gui_options);
+
+
+  gtk_signal_connect (GTK_OBJECT (texture_threshold_value), "value_changed", GTK_SIGNAL_FUNC (cb_texture_hscale), &gui_options);
+
+  //  g_signal_connect (texture_hscale, "value_changed", G_CALLBACK (cb_texture_hscale), &gui_options);
 
   gtk_widget_show (dialog);
 
@@ -209,7 +216,17 @@ gtk_container_add (GTK_CONTAINER (tab_box), hscale);
 }
 
 /* Our usual callback function */
-static void texture_check_button_callback( GtkWidget *widget,  gpointer   data )
+static void cb_texture_hscale( GtkAdjustment *adj,  gpointer   data )
+{
+    GUI_values *temp_vals;
+    temp_vals = (GUI_values *)data;
+
+    temp_vals->texture_threshold = gtk_adjustment_get_value(adj);
+
+}
+
+/* Our usual callback function */
+static void cb_texture_check_button( GtkWidget *widget,  gpointer   data )
 {
     GUI_values *temp_vals;
     temp_vals = (GUI_values *)data;
@@ -225,7 +242,7 @@ static void texture_check_button_callback( GtkWidget *widget,  gpointer   data )
 }
 
 /* Our usual callback function */
-static void clone_check_button_callback( GtkWidget *widget,  gpointer   data )
+static void cb_clone_check_button( GtkWidget *widget,  gpointer   data )
 {
     GUI_values *temp_vals;
     temp_vals = (GUI_values *)data;

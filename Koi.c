@@ -151,6 +151,8 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	gimp_progress_init ("Koi...");
     }
 
+  //  g_message("texture threshold %d\n",gui_options.texture_threshold);
+
     /* Allocate a big enough tile cache */
     gimp_tile_cache_ntiles (8 * (drawable->width / gimp_tile_width () + 1));
 
@@ -275,7 +277,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	    }
 	}
 
-	g_message("filled primary array");
+//	g_message("filled primary array");
 //    }
 //    else
 //    {
@@ -302,6 +304,8 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
     {
 	job_args[ii].array_in = in_array;
 	job_args[ii].array_out = out_array;
+	job_args[ii].gui_options.texture_threshold = gui_options.texture_threshold;
+
     }
 
 

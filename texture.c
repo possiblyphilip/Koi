@@ -63,7 +63,7 @@ void * find_blur_job(void *pArg)
 //	    temp /= size;
 
 	    //set the color to red because its been messed with
-	    if(temp < 90)
+	    if(temp < job_args->gui_options.texture_threshold)
 	    {
 		if(job_args->array_out[col][row][0] == 255 && job_args->array_out[col][row][1] == 255 && job_args->array_out[col][row][2] == 255)
 		{
@@ -143,7 +143,7 @@ void * find_blur_job(void *pArg)
 //
 //	temp /= size;
 	    //set the color to red because its been messed with
-	    if(temp < 90)
+	    if(temp < job_args->gui_options.texture_threshold)
 	    {
 //if the pixel is already green we dont want to set it to red, we will set it to grey instead
 		if(job_args->array_out[col][row][1] == 75 || job_args->array_out[col][row][1] == 255  || job_args->array_out[col][row][1] == 190 )
