@@ -30,6 +30,7 @@ typedef struct
     gboolean texture_checked;
 	int texture_threshold;
     gboolean clone_checked;
+     gboolean jpeg_checked;
 } GUI_values;
 
 typedef struct

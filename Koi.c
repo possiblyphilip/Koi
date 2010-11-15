@@ -133,6 +133,9 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
     int ii;
     GimpPixelRgn rgn_in, rgn_out;
     int         width, height;
+    
+    gint *layer_array;
+    gint *num_layers;
 
     pthread_t thread_id[4];
     int thread_return_value[4];
@@ -155,6 +158,11 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
     /* Allocate a big enough tile cache */
     gimp_tile_cache_ntiles (8 * (drawable->width / gimp_tile_width () + 1));
+
+//    	image_id = gimp_drawable_get_image(drawable->drawable_id);
+//    layer = gimp_image_get_active_layer(image_id);
+//
+//    g_message("%d layer id s", layer);
 
     /* Gets upper left and lower right coordinates,
    * and layers number in the image */
@@ -183,11 +191,19 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 //all this is to make a copy of the image and stuff it into a layer for processing so i dont mess up the original image
 
 	/* Get the active layer */
+
+
+//	layer_array = gimp_image_get_layers(i, num_layers);
+	
 	layer = gimp_image_get_active_layer(image_id);
 	if (layer == -1)
 	{
 	    return;
 	}
+
+//	g_message("%d layer id", layer);
+
+
 	/* Make a copy of the layer.  There's no error indicator? */
 	new_layer = gimp_layer_copy(layer);
 	/* Add the new layer to this image as the top layer */
