@@ -135,7 +135,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
     int         width, height;
     
     gint *layer_array;
-    gint *num_layers;
+    gint num_layers;
 
     pthread_t thread_id[4];
     int thread_return_value[4];
@@ -193,7 +193,9 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	/* Get the active layer */
 
 
-//	layer_array = gimp_image_get_layers(i, num_layers);
+	layer_array = gimp_image_get_layers(image_id, &num_layers);
+
+		g_message("%d layer id", layer_array[num_layers]);
 	
 	layer = gimp_image_get_active_layer(image_id);
 	if (layer == -1)
@@ -201,8 +203,8 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	    return;
 	}
 
-//	g_message("%d layer id", layer);
 
+	layer = layer_array[num_layers-1];
 
 	/* Make a copy of the layer.  There's no error indicator? */
 	new_layer = gimp_layer_copy(layer);
@@ -395,6 +397,40 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 		//something bad happened
 	    }
 	}
+    }
+
+    if(gui_options.jpeg_checked == TRUE)
+    {
+
+	gimp_run_procedure("file-jpeg-save",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, image_id , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_STRING, "/home/ben/programming/Koi/test_images/test.jpg", GIMP_PDB_STRING, "test", GIMP_PDB_FLOAT, 90.0, GIMP_PDB_FLOAT, 0.0, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_STRING,"created with Koi", GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_END);
+
+//	if (gimp_file_save(mode, image_id, layer, "/home/ben/programming/Koi/test_images/test.jpg", "test.jpg") != TRUE)
+//	{
+//	    g_message("failed to save file");
+//	}
+
+//	for(ii = 0; ii < threads; ii++)
+//	{
+//	    job_args[ii].start_colum = (width*ii) / threads;
+//	    job_args[ii].start_row = 0;
+//	    job_args[ii].width = (width / threads);
+//	    job_args[ii].height = height;
+//
+//	    thread_return_value[ii] = pthread_create((pthread_t*) &thread_id[ii], NULL, find_clone_job, (void*)&job_args[ii]);
+//	    if (thread_return_value[ii] != 0)
+//	    {
+//		//something bad happened
+//	    }
+//	}
+//	//hang out and wait till all the threads are done
+//	for(ii = 0; ii < threads; ii++)
+//	{
+//	    thread_return_value[ii] = pthread_join(thread_id[ii], NULL);
+//	    if (thread_return_value[ii] != 0)
+//	    {
+//		//something bad happened
+//	    }
+//	}
     }
 
 
