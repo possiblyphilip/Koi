@@ -126,13 +126,16 @@ static void run (const char *name, int nparams, const GimpParam *param,  int *nr
 static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 {
     GimpRunMode mode = GIMP_RUN_NONINTERACTIVE;
-    gint32 image_id, layer, new_layer, top_layer;
+    gint32 image_id, layer, new_layer, temp_image_id, temp_layer;
     int          row, col, channel, channels;
     int         start_colum, start_row, x2, y2;
     int num_return_vals;
     int ii;
     GimpPixelRgn rgn_in, rgn_out;
     int         width, height;
+
+   // gchar file_name[250];
+	gchar *file_name;
     
     gint *layer_array;
     gint num_layers;
@@ -211,7 +214,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	/* Add the new layer to this image as the top layer */
 	if (gimp_image_add_layer(image_id, new_layer, 0) != TRUE)
 	{
-
+	    g_message("failed to create layer");
 	    return;
 	}
 
@@ -275,8 +278,8 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
 //dump the gimp image data into my own array for processing
     gimp_progress_set_text("filling Koi array");
-//    if (preview)
-//    {
+    if(gui_options.clone_checked || gui_options.texture_checked)
+    {
 	for (row = 0; row < height; row++)
 	{
 	    for (col = 0; col < width; col++)
@@ -294,6 +297,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 		gimp_progress_update ((gdouble) (row - start_row) / (gdouble) (x2 - start_colum));
 	    }
 	}
+    }
 
 //	g_message("filled primary array");
 //    }
@@ -402,38 +406,41 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
     if(gui_options.jpeg_checked == TRUE)
     {
 
-	gimp_run_procedure("file-jpeg-save",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, image_id , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_STRING, "/home/ben/programming/Koi/test_images/test.jpg", GIMP_PDB_STRING, "test", GIMP_PDB_FLOAT, 90.0, GIMP_PDB_FLOAT, 0.0, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_STRING,"created with Koi", GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_END);
+	file_name = gimp_image_get_filename (image_id);
 
-//	if (gimp_file_save(mode, image_id, layer, "/home/ben/programming/Koi/test_images/test.jpg", "test.jpg") != TRUE)
-//	{
-//	    g_message("failed to save file");
-//	}
+	g_message("file name: %s\n", file_name);
 
-//	for(ii = 0; ii < threads; ii++)
-//	{
-//	    job_args[ii].start_colum = (width*ii) / threads;
-//	    job_args[ii].start_row = 0;
-//	    job_args[ii].width = (width / threads);
-//	    job_args[ii].height = height;
-//
-//	    thread_return_value[ii] = pthread_create((pthread_t*) &thread_id[ii], NULL, find_clone_job, (void*)&job_args[ii]);
-//	    if (thread_return_value[ii] != 0)
-//	    {
-//		//something bad happened
-//	    }
-//	}
-//	//hang out and wait till all the threads are done
-//	for(ii = 0; ii < threads; ii++)
-//	{
-//	    thread_return_value[ii] = pthread_join(thread_id[ii], NULL);
-//	    if (thread_return_value[ii] != 0)
-//	    {
-//		//something bad happened
-//	    }
-//	}
+	printf("file name %s\n", file_name);
+
+	gimp_run_procedure("file-jpeg-save",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, image_id , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_STRING, "/home/ben/programming/Koi/test_images/test.jpg", GIMP_PDB_STRING, "test", GIMP_PDB_FLOAT, .90, GIMP_PDB_FLOAT, 0.0, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_STRING,"created with Koi", GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 1, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 1, GIMP_PDB_END);
+
+	// reload our saved image and suck a layer off of it to subtract against or original image
+
+
+	temp_layer = gimp_file_load_layer(mode, image_id, "/home/ben/programming/Koi/test_images/test.jpg");
+
+	gimp_layer_set_mode(temp_layer, 8);
+
+	/* Add the new layer to this image as the top layer */
+	if (gimp_image_add_layer(image_id, temp_layer, -1) != TRUE)
+	{
+	    g_message("failed to create layer");
+	    return;
+	}
+
+	layer = gimp_image_get_active_layer(image_id);
+	if (layer == -1)
+	{
+	    return;
+	}
+
+	gimp_image_merge_down(image_id, layer, 2);
+
+	drawable->drawable_id = gimp_image_get_active_drawable(image_id);
+
+	gimp_brightness_contrast(drawable->drawable_id, 127, 127);
+
     }
-
-
 
 
 // write the array back to the out image here
@@ -450,7 +457,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	    }
 	}
     }
-    else
+    else if(gui_options.clone_checked || gui_options.texture_checked)
     {
 //this way the green should be clear ...
 //	top_layer = gimp_run_procedure("gimp-image-get-active-layer",&num_return_vals, GIMP_PDB_IMAGE, image_id ,  GIMP_PDB_END);
@@ -479,7 +486,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
     {
 	gimp_drawable_preview_draw_region (GIMP_DRAWABLE_PREVIEW (preview),  &rgn_out);
     }
-    else
+    else if(gui_options.clone_checked || gui_options.texture_checked)
     {
 	gimp_drawable_flush (drawable);
 	gimp_drawable_merge_shadow (drawable->drawable_id, TRUE);
@@ -501,12 +508,6 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 //    gimp_run_procedure("plug-in-colortoalpha",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_COLOR, (80, 190, 70), GIMP_PDB_END);
 
 }
-
-  //################################### clone job ########################################################## clone job #######################
-
-
-
-  //################################### blur job #######################3
 
 
   //################################### make array #######################
