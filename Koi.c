@@ -157,7 +157,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	gimp_progress_init ("Koi...");
     }
 
-  //  g_message("texture threshold %d\n",gui_options.texture_threshold);
+ //   g_message("block_size %d\n",gui_options.clone_block_size);
 
     /* Allocate a big enough tile cache */
     gimp_tile_cache_ntiles (8 * (drawable->width / gimp_tile_width () + 1));
@@ -198,7 +198,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
 	layer_array = gimp_image_get_layers(image_id, &num_layers);
 
-		g_message("%d layer id", layer_array[num_layers]);
+//		g_message("%d layer id", layer_array[num_layers]);
 	
 	layer = gimp_image_get_active_layer(image_id);
 	if (layer == -1)
@@ -327,6 +327,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	job_args[ii].array_in = in_array;
 	job_args[ii].array_out = out_array;
 	job_args[ii].gui_options.texture_threshold = gui_options.texture_threshold;
+	job_args[ii].gui_options.clone_block_size = gui_options.clone_block_size;
 
     }
 
@@ -408,11 +409,11 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
 	file_name = gimp_image_get_filename (image_id);
 
-	g_message("file name: %s\n", file_name);
+//	g_message("file name: %s\n", file_name);
 
-	printf("file name %s\n", file_name);
+//	printf("file name %s\n", file_name);
 
-	gimp_run_procedure("file-jpeg-save",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, image_id , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_STRING, "/home/ben/programming/Koi/test_images/test.jpg", GIMP_PDB_STRING, "test", GIMP_PDB_FLOAT, .90, GIMP_PDB_FLOAT, 0.0, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_STRING,"created with Koi", GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 1, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 1, GIMP_PDB_END);
+	gimp_run_procedure("file-jpeg-save",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, image_id , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_STRING, "/home/ben/programming/Koi/test_images/test.jpg", GIMP_PDB_STRING, "test", GIMP_PDB_FLOAT, .85, GIMP_PDB_FLOAT, 0.0, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_STRING,"created with Koi", GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 1, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 1, GIMP_PDB_END);
 
 	// reload our saved image and suck a layer off of it to subtract against or original image
 
@@ -528,7 +529,7 @@ void allocate_pixel_array(guchar ****array, int width, int height, int depth)
 	    arr[ii][jj]= (guchar *)malloc (depth * sizeof(guchar));
 	    for (kk = 0; kk < depth; ++kk)
 	    {
-		arr[ii][jj][kk] = kk*100;
+		arr[ii][jj][kk] = 255;
 	    }
 	}
     }

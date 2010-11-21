@@ -21,6 +21,10 @@
 
 #include <libgimp/gimp.h>
 #include <libgimp/gimpui.h>
+#include <pthread.h>
+
+//#include "/usr/include/gimp-2.0/libgimp/gimp.h"
+//#include "/usr/include/gimp-2.0/libgimp/gimpui.h"
 
 #include <stdlib.h>
 
@@ -29,6 +33,7 @@ typedef struct
     gboolean preview;
     gboolean texture_checked;
 	int texture_threshold;
+	int clone_block_size;
     gboolean clone_checked;
      gboolean jpeg_checked;
 } GUI_values;

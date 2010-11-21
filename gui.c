@@ -30,12 +30,14 @@ static gboolean koi_dialog (GimpDrawable *drawable)
   GtkWidget *spinbutton;
   GtkWidget *tab_box;
     GtkWidget *h_box;
-	GtkWidget *v_box;
+  GtkWidget *block_size_spinbutton;
 
   GtkWidget *texture_hscale;
   GtkWidget *notebook;
 
-      GtkObject *texture_threshold_value;
+  GtkObject *texture_threshold_value;
+
+  GtkObject *block_size_spinbutton_value;
   GtkWidget *jpeg_check_button;
     GtkWidget *texture_check_button;
     GtkWidget *clone_check_button;
@@ -142,6 +144,21 @@ gtk_container_add (GTK_CONTAINER (tab_box), texture_hscale);
   gtk_widget_show (clone_check_button);
   //i add the button to the page
   gtk_container_add (GTK_CONTAINER (tab_box), clone_check_button);
+
+
+  block_size_spinbutton = gimp_spin_button_new (&block_size_spinbutton_value, gui_options.clone_block_size, 4, 40, 4, 4, 4, 4, 0);
+  gtk_container_add (GTK_CONTAINER (tab_box), block_size_spinbutton);
+  gtk_widget_show (block_size_spinbutton);
+
+//  block_size_value = gtk_adjustment_new (90, 0, 256, 1, 1, 1);
+//  block_size_hscale = gtk_hscale_new (GTK_ADJUSTMENT (block_size_value));
+//  gtk_scale_set_digits( GTK_SCALE(texture_hscale), 3);
+////  gtk_range_set_update_policy      (GtkRange      *range,   GtkUpdateType  policy);
+//  gtk_widget_set_size_request (texture_hscale, 100, 40);
+//	 gtk_widget_show (texture_hscale);
+
+gtk_container_add (GTK_CONTAINER (tab_box), texture_hscale);
+
   //then add the page to the notbook
   gtk_notebook_append_page (GTK_NOTEBOOK (notebook), tab_box, label);
 
@@ -224,6 +241,8 @@ gtk_notebook_append_page (GTK_NOTEBOOK (notebook), tab_box, label);
 
 
   gtk_signal_connect (GTK_OBJECT (texture_threshold_value), "value_changed", GTK_SIGNAL_FUNC (cb_texture_hscale), &gui_options);
+
+  g_signal_connect (block_size_spinbutton_value, "value_changed", G_CALLBACK (gimp_int_adjustment_update), &gui_options.clone_block_size);
 
 
   gtk_widget_show (dialog);

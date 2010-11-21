@@ -21,7 +21,7 @@
 void * find_clone_job(void *pArg)
 {
 
-    int block_size = 16;
+    int block_size;
 
     int block_row,block_col;
     int counter = 0;
@@ -36,13 +36,21 @@ void * find_clone_job(void *pArg)
 
     guchar red, green, blue;
 
+
+    //get the argument passed in, and set our local variables
+    JOB_ARG* job_args = (JOB_ARG*)pArg;
+
+
+    block_size = job_args->gui_options.clone_block_size;
+
+    printf("block size %d\n", block_size);
+
     clone_block_metric *block_metric_array;
 
     clone_block_metric slider[block_size];
 
 
-    //get the argument passed in, and set our local variables
-    JOB_ARG* job_args = (JOB_ARG*)pArg;
+
 
 
     //this should create a few more blocks than im going to need but memory is cheap :)
@@ -168,6 +176,7 @@ void * find_clone_job(void *pArg)
 	    job_args->array_out[from_col][from_row][0] = job_args->array_in[from_col][from_row][0];
 	    job_args->array_out[from_col][from_row][1] = job_args->array_in[from_col][from_row][1];
 	    job_args->array_out[from_col][from_row][2] = job_args->array_in[from_col][from_row][2];
+
 	}
     }
 
@@ -194,7 +203,7 @@ void * find_clone_job(void *pArg)
 
 			}
 		    }
-		    if(temp <= 150)
+		    if(temp <= block_size*10)
 		    {
 			for (block_row = 0; block_row < block_size ; block_row++)
 			{
