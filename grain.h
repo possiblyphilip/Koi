@@ -18,9 +18,7 @@
 
 #include "Koi.h"
 
-#ifndef TEXTURE_H
-#define TEXTURE_H
+#ifndef GRAIN_H
+#define GRAIN_H
 
-#include <math.h>
-
-#endif // TEXTURE_H
+#endif // GRAIN_H

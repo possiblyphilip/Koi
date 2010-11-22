@@ -18,9 +18,7 @@
 
 #include "Koi.h"
 
-#ifndef TEXTURE_H
-#define TEXTURE_H
+#ifndef DY_CON_H
+#define DY_CON_H
 
-#include <math.h>
-
-#endif // TEXTURE_H
+#endif // DY_CON_H

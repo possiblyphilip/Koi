@@ -17,9 +17,12 @@
 */
 
 #include "Koi.h"
+
 #include "gui.c"
 #include "clone.c"
 #include "texture.c"
+#include "dy_con.c"
+#include "grain.c"
 
 MAIN()
 
@@ -264,10 +267,14 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	    }
 	}
 
-	gimp_run_procedure("gimp-desaturate",&num_return_vals, GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_END);
-	gimp_run_procedure("plug-in-edge",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_FLOAT, 9.99, GIMP_PDB_INT32, 2, GIMP_PDB_INT32, 5, GIMP_PDB_END);
     }
 
+    if(gui_options.texture_checked == TRUE || gui_options.grain_checked == TRUE)
+    {
+	gimp_run_procedure("gimp-desaturate",&num_return_vals, GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_END);
+	gimp_run_procedure("plug-in-edge",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_FLOAT, 9.99, GIMP_PDB_INT32, 2, GIMP_PDB_INT32, 5, GIMP_PDB_END);
+
+    }
     channels = gimp_drawable_bpp (drawable->drawable_id);
 
 
@@ -278,7 +285,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
 //dump the gimp image data into my own array for processing
     gimp_progress_set_text("filling Koi array");
-    if(gui_options.clone_checked || gui_options.texture_checked)
+    if(gui_options.clone_checked || gui_options.texture_checked || gui_options.grain_checked)
     {
 	for (row = 0; row < height; row++)
 	{
@@ -328,28 +335,17 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	job_args[ii].array_out = out_array;
 	job_args[ii].gui_options.texture_threshold = gui_options.texture_threshold;
 	job_args[ii].gui_options.clone_block_size = gui_options.clone_block_size;
+	job_args[ii].gui_options.radius = gui_options.radius;
 
     }
+
 
 
 //cut up and farm out the image job
 //ill only kick off one thred when its the preview for now
     gimp_progress_set_text("Koi working");
+    //################################################33
 
-//    if(preview)
-//    {
-//	job_args[0].start_colum = 0;
-//	job_args[0].start_row = 0;
-//	job_args[0].width = width;
-//	job_args[0].height = height;
-//
-//	thread_return_value[0] = pthread_create((pthread_t*) &thread_id[0], NULL, find_blur_job, (void*)&job_args[0]);
-//	if (thread_return_value[0] != 0)
-//	{
-////something bad happened
-//	}
-//    }
-//    else
     if(gui_options.texture_checked == TRUE)
     {
 	for(ii = 0; ii < threads; ii++)
@@ -377,7 +373,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
     }
 
 
-
+   //################################################33
     if(gui_options.clone_checked == TRUE)
     {
 	for(ii = 0; ii < threads; ii++)
@@ -403,17 +399,41 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	    }
 	}
     }
+       //################################################33
+
+    if(gui_options.grain_checked == TRUE)
+    {
+	for(ii = 0; ii < threads; ii++)
+	{
+	    job_args[ii].start_colum = (width*ii) / threads;
+	    job_args[ii].start_row = 0;
+	    job_args[ii].width = (width / threads);
+	    job_args[ii].height = height;
+
+	    thread_return_value[ii] = pthread_create((pthread_t*) &thread_id[ii], NULL, grain, (void*)&job_args[ii]);
+	    if (thread_return_value[ii] != 0)
+	    {
+		//something bad happened
+	    }
+	}
+	//hang out and wait till all the threads are done
+	for(ii = 0; ii < threads; ii++)
+	{
+	    thread_return_value[ii] = pthread_join(thread_id[ii], NULL);
+	    if (thread_return_value[ii] != 0)
+	    {
+		//something bad happened
+	    }
+	}
+    }
+       //################################################33
 
     if(gui_options.jpeg_checked == TRUE)
     {
 
 	file_name = gimp_image_get_filename (image_id);
 
-//	g_message("file name: %s\n", file_name);
-
-//	printf("file name %s\n", file_name);
-
-	gimp_run_procedure("file-jpeg-save",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, image_id , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_STRING, "/home/ben/programming/Koi/test_images/test.jpg", GIMP_PDB_STRING, "test", GIMP_PDB_FLOAT, .85, GIMP_PDB_FLOAT, 0.0, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_STRING,"created with Koi", GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 1, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 1, GIMP_PDB_END);
+	gimp_run_procedure("file-jpeg-save",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, image_id , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_STRING, "/home/ben/programming/Koi/test_images/test.jpg", GIMP_PDB_STRING, "test", GIMP_PDB_FLOAT, gui_options.compress, GIMP_PDB_FLOAT, 0.0, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_STRING,"created with Koi", GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 1, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 1, GIMP_PDB_END);
 
 	// reload our saved image and suck a layer off of it to subtract against or original image
 
@@ -436,10 +456,31 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	}
 
 	gimp_image_merge_down(image_id, layer, 2);
-
 	drawable->drawable_id = gimp_image_get_active_drawable(image_id);
-
 	gimp_brightness_contrast(drawable->drawable_id, 127, 127);
+
+//	for(ii = 0; ii < threads; ii++)
+//	{
+//	    job_args[ii].start_colum = (width*ii) / threads;
+//	    job_args[ii].start_row = 0;
+//	    job_args[ii].width = (width / threads);
+//	    job_args[ii].height = height;
+//
+//	    thread_return_value[ii] = pthread_create((pthread_t*) &thread_id[ii], NULL, dy_con, (void*)&job_args[ii]);
+//	    if (thread_return_value[ii] != 0)
+//	    {
+//		//something bad happened
+//	    }
+//	}
+//	//hang out and wait till all the threads are done
+//	for(ii = 0; ii < threads; ii++)
+//	{
+//	    thread_return_value[ii] = pthread_join(thread_id[ii], NULL);
+//	    if (thread_return_value[ii] != 0)
+//	    {
+//		//something bad happened
+//	    }
+//	}
 
     }
 
@@ -458,7 +499,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	    }
 	}
     }
-    else if(gui_options.clone_checked || gui_options.texture_checked)
+    else if(gui_options.clone_checked || gui_options.texture_checked || gui_options.grain_checked)
     {
 //this way the green should be clear ...
 //	top_layer = gimp_run_procedure("gimp-image-get-active-layer",&num_return_vals, GIMP_PDB_IMAGE, image_id ,  GIMP_PDB_END);
@@ -487,7 +528,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
     {
 	gimp_drawable_preview_draw_region (GIMP_DRAWABLE_PREVIEW (preview),  &rgn_out);
     }
-    else if(gui_options.clone_checked || gui_options.texture_checked)
+    else if(gui_options.clone_checked || gui_options.texture_checked || gui_options.grain_checked)
     {
 	gimp_drawable_flush (drawable);
 	gimp_drawable_merge_shadow (drawable->drawable_id, TRUE);

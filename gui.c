@@ -32,15 +32,23 @@ static gboolean koi_dialog (GimpDrawable *drawable)
     GtkWidget *h_box;
   GtkWidget *block_size_spinbutton;
 
+    GtkWidget *notebook;
+
+   GtkWidget *radius_hscale;
   GtkWidget *texture_hscale;
-  GtkWidget *notebook;
+    GtkWidget *compress_hscale;
+
 
   GtkObject *texture_threshold_value;
+    GtkObject *compress_value;
+    GtkObject *radius_value;
+
 
   GtkObject *block_size_spinbutton_value;
   GtkWidget *jpeg_check_button;
     GtkWidget *texture_check_button;
     GtkWidget *clone_check_button;
+      GtkWidget *grain_check_button;
 
      GtkWidget *label;
 
@@ -88,6 +96,7 @@ static gboolean koi_dialog (GimpDrawable *drawable)
   gtk_widget_show (notebook);
 
 
+  //######################################3
   //and then i make some pages or frames to shove into there i think
   //so this is the page
 
@@ -129,6 +138,7 @@ gtk_container_add (GTK_CONTAINER (tab_box), texture_hscale);
 
   gtk_notebook_append_page (GTK_NOTEBOOK (notebook), tab_box, label);
 
+  //######################################3
     label = gtk_label_new ("Clone");
 
   //so this is the page
@@ -163,10 +173,10 @@ gtk_container_add (GTK_CONTAINER (tab_box), texture_hscale);
   gtk_notebook_append_page (GTK_NOTEBOOK (notebook), tab_box, label);
 
 
+  //######################################3
   label = gtk_label_new ("Jpeg");
 
 //so this is the page
-//  frame = gtk_frame_new ("Clone tool use");
  tab_box = gtk_vbox_new (FALSE, 6);
 
 gtk_container_border_width (GTK_CONTAINER (tab_box), 10);
@@ -179,18 +189,48 @@ gtk_widget_show (jpeg_check_button);
 //i add the button to the page
 gtk_container_add (GTK_CONTAINER (tab_box), jpeg_check_button);
 //then add the page to the notbook
+
+
+compress_value = gtk_adjustment_new (.85, 0, 1.0, .01, .01, .01);
+compress_hscale = gtk_hscale_new (GTK_ADJUSTMENT (compress_value));
+gtk_scale_set_digits( GTK_SCALE(compress_hscale), 3);
+//  gtk_range_set_update_policy      (GtkRange      *range,   GtkUpdateType  policy);
+gtk_widget_set_size_request (compress_hscale, 100, 40);
+       gtk_widget_show (compress_hscale);
+
+gtk_container_add (GTK_CONTAINER (tab_box), compress_hscale);
+
 gtk_notebook_append_page (GTK_NOTEBOOK (notebook), tab_box, label);
 
+//######################################3
+
+label = gtk_label_new ("Grain");
+
+//so this is the page
+tab_box = gtk_vbox_new (FALSE, 6);
+
+gtk_container_border_width (GTK_CONTAINER (tab_box), 10);
+gtk_widget_set_size_request (tab_box, 200, 75);
+gtk_widget_show (tab_box);
+//this is the button i want to add to the page
+grain_check_button = gtk_check_button_new_with_label ( "Find image grain");
+gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(grain_check_button), FALSE);
+gtk_widget_show (grain_check_button);
+//i add the button to the page
+gtk_container_add (GTK_CONTAINER (tab_box), grain_check_button);
+//then add the page to the notbook
 
 
+radius_value = gtk_adjustment_new (20, 0, 50, 1, 1, 1);
+radius_hscale = gtk_hscale_new (GTK_ADJUSTMENT (radius_value));
+gtk_scale_set_digits( GTK_SCALE(radius_hscale), 1);
+//  gtk_range_set_update_policy      (GtkRange      *range,   GtkUpdateType  policy);
+gtk_widget_set_size_request (radius_hscale, 100, 40);
+     gtk_widget_show (radius_hscale);
 
-//
-//  clone_check_button = gtk_check_button_new_with_label ( "Cloneing");
-//  gtk_widget_show (clone_check_button);
-//  gtk_box_pack_start (GTK_BOX (main_hbox), clone_check_button, FALSE, FALSE, 6);
-//  gtk_label_set_justify (GTK_LABEL (clone_check_button), GTK_JUSTIFY_RIGHT);
-//
-//  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(clone_check_button), FALSE);
+gtk_container_add (GTK_CONTAINER (tab_box), radius_hscale);
+
+gtk_notebook_append_page (GTK_NOTEBOOK (notebook), tab_box, label);
 
 
 
@@ -238,9 +278,13 @@ gtk_notebook_append_page (GTK_NOTEBOOK (notebook), tab_box, label);
   g_signal_connect (texture_check_button, "clicked", G_CALLBACK (cb_texture_check_button), &gui_options);
   g_signal_connect (clone_check_button, "clicked", G_CALLBACK (cb_clone_check_button), &gui_options);
     g_signal_connect (jpeg_check_button, "clicked", G_CALLBACK (cb_jpeg_check_button), &gui_options);
+	g_signal_connect (grain_check_button, "clicked", G_CALLBACK (cb_grain_check_button), &gui_options);
 
 
   gtk_signal_connect (GTK_OBJECT (texture_threshold_value), "value_changed", GTK_SIGNAL_FUNC (cb_texture_hscale), &gui_options);
+    gtk_signal_connect (GTK_OBJECT (compress_value), "value_changed", GTK_SIGNAL_FUNC (cb_compress_hscale), &gui_options);
+
+      gtk_signal_connect (GTK_OBJECT (radius_value), "value_changed", GTK_SIGNAL_FUNC (cb_radius_hscale), &gui_options);
 
   g_signal_connect (block_size_spinbutton_value, "value_changed", G_CALLBACK (gimp_int_adjustment_update), &gui_options.clone_block_size);
 
@@ -255,6 +299,17 @@ gtk_notebook_append_page (GTK_NOTEBOOK (notebook), tab_box, label);
 }
 
 /* Our usual callback function */
+static void cb_compress_hscale( GtkAdjustment *adj,  gpointer   data )
+{
+    GUI_values *temp_vals;
+    temp_vals = (GUI_values *)data;
+
+    temp_vals->compress = gtk_adjustment_get_value(adj);
+//    temp_vals->texture_threshold = gtk_adjustment_set_value(adj, adj->value);
+
+}
+
+/* Our usual callback function */
 static void cb_texture_hscale( GtkAdjustment *adj,  gpointer   data )
 {
     GUI_values *temp_vals;
@@ -263,6 +318,32 @@ static void cb_texture_hscale( GtkAdjustment *adj,  gpointer   data )
     temp_vals->texture_threshold = gtk_adjustment_get_value(adj);
 //    temp_vals->texture_threshold = gtk_adjustment_set_value(adj, adj->value);
 
+}
+
+/* Our usual callback function */
+static void cb_radius_hscale( GtkAdjustment *adj,  gpointer   data )
+{
+    GUI_values *temp_vals;
+    temp_vals = (GUI_values *)data;
+
+    temp_vals->radius = gtk_adjustment_get_value(adj);
+
+}
+
+/* Our usual callback function */
+static void cb_grain_check_button( GtkWidget *widget,  gpointer   data )
+{
+    GUI_values *temp_vals;
+    temp_vals = (GUI_values *)data;
+
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON (widget)))
+    {
+	temp_vals->grain_checked = TRUE;
+    }
+    else
+    {
+	temp_vals->grain_checked = FALSE;
+    }
 }
 
 /* Our usual callback function */
