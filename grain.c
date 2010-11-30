@@ -36,11 +36,37 @@ void * grain(void *pArg)
     int row_offset;
     int col_offset;
 
+    int max_col;
+    int min_col;
+
 
     //get the argument passed in, and set our local variables
     JOB_ARG* job_args = (JOB_ARG*)pArg;
 
     radius = job_args->gui_options.radius;
+
+    //this snipit should let the colums blend in the middle of the image without writing over the edge of the image
+	if(job_args->start_colum+job_args->width+radius < job_args->width*job_args->gui_options.threads)
+	{
+	    max_col = job_args->start_colum+job_args->width;
+
+	}
+	else
+	{
+	    max_col = (job_args->width*job_args->gui_options.threads) - radius;
+	}
+
+
+//if im at the left wall i need to start over at least one radius so i dont run off the page
+	if(job_args->start_colum == 0)
+	{
+	    min_col = radius;
+
+	}
+	else
+	{
+	    min_col = job_args->start_colum;
+	}
 
     //set my image to black
 
@@ -55,13 +81,13 @@ void * grain(void *pArg)
     }
 
 
-    for (row = radius; row < job_args->height-radius ; row+=radius/2)
+    for (row = radius; row < job_args->height-radius ; row+=radius/4)
     {
-	for (col = job_args->start_colum+radius; col < job_args->start_colum+job_args->width-radius; col+=radius/2)
+	for (col = min_col; col < max_col; col+=radius/4)
 	{
 	    highest = 0;
 
-	    for(angle = 0; angle < 3.14; angle+= .01)
+	    for(angle = 0; angle < 3.14*2; angle+= .02)
 	    {
 
 		    temp = 0;

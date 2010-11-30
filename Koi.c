@@ -23,6 +23,8 @@
 #include "texture.c"
 #include "dy_con.c"
 #include "grain.c"
+#include "histogram.c"
+#include "speckle.c"
 
 MAIN()
 
@@ -143,10 +145,12 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
     gint *layer_array;
     gint num_layers;
 
-    pthread_t thread_id[4];
-    int thread_return_value[4];
 
-    int threads = 4;
+
+    int threads = gui_options.threads;
+
+    pthread_t thread_id[threads];
+    int thread_return_value[threads];
 
     guchar pixel[4];
 
@@ -285,7 +289,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
 //dump the gimp image data into my own array for processing
     gimp_progress_set_text("filling Koi array");
-    if(gui_options.clone_checked || gui_options.texture_checked || gui_options.grain_checked)
+    if(!gui_options.jpeg_checked)
     {
 	for (row = 0; row < height; row++)
 	{
@@ -299,7 +303,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 		}
 	    }
 
-	    if (row % 10 == 0)
+	    if (row % 20 == 0)
 	    {
 		gimp_progress_update ((gdouble) (row - start_row) / (gdouble) (x2 - start_colum));
 	    }
@@ -336,6 +340,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	job_args[ii].gui_options.texture_threshold = gui_options.texture_threshold;
 	job_args[ii].gui_options.clone_block_size = gui_options.clone_block_size;
 	job_args[ii].gui_options.radius = gui_options.radius;
+	job_args[ii].gui_options.threads = gui_options.threads;
 
     }
 
@@ -344,6 +349,35 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 //cut up and farm out the image job
 //ill only kick off one thred when its the preview for now
     gimp_progress_set_text("Koi working");
+
+    //################################################33
+
+    if(gui_options.speckle_checked == TRUE)
+    {
+	for(ii = 0; ii < threads; ii++)
+	{
+	    job_args[ii].start_colum = (width*ii) / threads;
+	    job_args[ii].start_row = 0;
+	    job_args[ii].width = (width / threads);
+	    job_args[ii].height = height;
+
+	    thread_return_value[ii] = pthread_create((pthread_t*) &thread_id[ii], NULL, speckle, (void*)&job_args[ii]);
+	    if (thread_return_value[ii] != 0)
+	    {
+		//something bad happened
+	    }
+	}
+	//hang out and wait till all the threads are done
+	for(ii = 0; ii < threads; ii++)
+	{
+	    thread_return_value[ii] = pthread_join(thread_id[ii], NULL);
+	    if (thread_return_value[ii] != 0)
+	    {
+		//something bad happened
+	    }
+	}
+    }
+
     //################################################33
 
     if(gui_options.texture_checked == TRUE)
@@ -426,6 +460,35 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	    }
 	}
     }
+
+    //################################################33
+
+ if(gui_options.histogram_checked == TRUE)
+ {
+     for(ii = 0; ii < threads; ii++)
+     {
+	 job_args[ii].start_colum = (width*ii) / threads;
+	 job_args[ii].start_row = 0;
+	 job_args[ii].width = (width / threads);
+	 job_args[ii].height = height;
+
+	 thread_return_value[ii] = pthread_create((pthread_t*) &thread_id[ii], NULL, histogram, (void*)&job_args[ii]);
+	 if (thread_return_value[ii] != 0)
+	 {
+	     //something bad happened
+	 }
+     }
+     //hang out and wait till all the threads are done
+     for(ii = 0; ii < threads; ii++)
+     {
+	 thread_return_value[ii] = pthread_join(thread_id[ii], NULL);
+	 if (thread_return_value[ii] != 0)
+	 {
+	     //something bad happened
+	 }
+     }
+ }
+
        //################################################33
 
     if(gui_options.jpeg_checked == TRUE)
@@ -499,7 +562,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	    }
 	}
     }
-    else if(gui_options.clone_checked || gui_options.texture_checked || gui_options.grain_checked)
+    else if(!gui_options.jpeg_checked)
     {
 //this way the green should be clear ...
 //	top_layer = gimp_run_procedure("gimp-image-get-active-layer",&num_return_vals, GIMP_PDB_IMAGE, image_id ,  GIMP_PDB_END);
@@ -513,7 +576,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 		gimp_pixel_rgn_set_pixel (&rgn_out, out_array[col][row],  col, row);
 	    }
 
-	    if (row % 10 == 0)
+	    if (row % 20 == 0)
 	    {
 		gimp_progress_update ((gdouble) (row - start_row) / (gdouble) (x2 - start_colum));
 	    }
@@ -528,7 +591,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
     {
 	gimp_drawable_preview_draw_region (GIMP_DRAWABLE_PREVIEW (preview),  &rgn_out);
     }
-    else if(gui_options.clone_checked || gui_options.texture_checked || gui_options.grain_checked)
+    else if(!gui_options.jpeg_checked)
     {
 	gimp_drawable_flush (drawable);
 	gimp_drawable_merge_shadow (drawable->drawable_id, TRUE);

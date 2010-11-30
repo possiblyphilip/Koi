@@ -47,7 +47,6 @@ void * dy_con(void *pArg)
 	    right_slider[ii] = 0;
 	}
 
-
 	for (col = job_args->start_colum; col < job_args->start_colum+job_args->width-size; col++)
 	{
 	    //set the current element in the sliders to our newest pixel values

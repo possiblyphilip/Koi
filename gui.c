@@ -27,9 +27,9 @@ static gboolean koi_dialog (GimpDrawable *drawable)
   GtkWidget *frame;
 
   GtkWidget *alignment;
-  GtkWidget *spinbutton;
+  GtkWidget *vbox;
   GtkWidget *tab_box;
-    GtkWidget *h_box;
+    GtkWidget *thread_count_spinbutton;
   GtkWidget *block_size_spinbutton;
 
     GtkWidget *notebook;
@@ -42,19 +42,25 @@ static gboolean koi_dialog (GimpDrawable *drawable)
   GtkObject *texture_threshold_value;
     GtkObject *compress_value;
     GtkObject *radius_value;
-
-
   GtkObject *block_size_spinbutton_value;
+    GtkObject *thread_count_spinbutton_value;
+
+
   GtkWidget *jpeg_check_button;
     GtkWidget *texture_check_button;
     GtkWidget *clone_check_button;
       GtkWidget *grain_check_button;
+	    GtkWidget *histogram_check_button;
+
+	    GtkWidget *speckle_check_button;
 
      GtkWidget *label;
 
     int i;
        char bufferf[32];
        char bufferl[32];
+
+       gui_options.threads = 4;
 
   gboolean   run;
 
@@ -126,7 +132,7 @@ static gboolean koi_dialog (GimpDrawable *drawable)
 
   texture_threshold_value = gtk_adjustment_new (90, 0, 256, 1, 1, 1);
   texture_hscale = gtk_hscale_new (GTK_ADJUSTMENT (texture_threshold_value));
-  gtk_scale_set_digits( GTK_SCALE(texture_hscale), 3);
+  gtk_scale_set_digits( GTK_SCALE(texture_hscale), 0);
 //  gtk_range_set_update_policy      (GtkRange      *range,   GtkUpdateType  policy);
   gtk_widget_set_size_request (texture_hscale, 100, 40);
 	 gtk_widget_show (texture_hscale);
@@ -223,7 +229,7 @@ gtk_container_add (GTK_CONTAINER (tab_box), grain_check_button);
 
 radius_value = gtk_adjustment_new (20, 0, 50, 1, 1, 1);
 radius_hscale = gtk_hscale_new (GTK_ADJUSTMENT (radius_value));
-gtk_scale_set_digits( GTK_SCALE(radius_hscale), 1);
+gtk_scale_set_digits( GTK_SCALE(radius_hscale), 0);
 //  gtk_range_set_update_policy      (GtkRange      *range,   GtkUpdateType  policy);
 gtk_widget_set_size_request (radius_hscale, 100, 40);
      gtk_widget_show (radius_hscale);
@@ -232,7 +238,69 @@ gtk_container_add (GTK_CONTAINER (tab_box), radius_hscale);
 
 gtk_notebook_append_page (GTK_NOTEBOOK (notebook), tab_box, label);
 
+//######################################3
+  label = gtk_label_new ("Histogram");
 
+ tab_box = gtk_vbox_new (FALSE, 6);
+
+gtk_container_border_width (GTK_CONTAINER (tab_box), 10);
+gtk_widget_set_size_request (tab_box, 200, 75);
+gtk_widget_show (tab_box);
+//this is the button i want to add to the page
+histogram_check_button = gtk_check_button_new_with_label ( "Find Micro Histograms");
+gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(histogram_check_button), FALSE);
+gtk_widget_show (histogram_check_button);
+//i add the button to the page
+gtk_container_add (GTK_CONTAINER (tab_box), histogram_check_button);
+
+
+block_size_spinbutton = gimp_spin_button_new (&block_size_spinbutton_value, gui_options.clone_block_size, 4, 40, 4, 4, 4, 4, 0);
+gtk_container_add (GTK_CONTAINER (tab_box), block_size_spinbutton);
+gtk_widget_show (block_size_spinbutton);
+
+//  block_size_value = gtk_adjustment_new (90, 0, 256, 1, 1, 1);
+//  block_size_hscale = gtk_hscale_new (GTK_ADJUSTMENT (block_size_value));
+//  gtk_scale_set_digits( GTK_SCALE(texture_hscale), 3);
+////  gtk_range_set_update_policy      (GtkRange      *range,   GtkUpdateType  policy);
+//  gtk_widget_set_size_request (texture_hscale, 100, 40);
+//	 gtk_widget_show (texture_hscale);
+
+gtk_container_add (GTK_CONTAINER (tab_box), texture_hscale);
+
+//then add the page to the notbook
+gtk_notebook_append_page (GTK_NOTEBOOK (notebook), tab_box, label);
+
+//######################################3
+  label = gtk_label_new ("Speckle");
+
+ tab_box = gtk_vbox_new (FALSE, 6);
+
+gtk_container_border_width (GTK_CONTAINER (tab_box), 10);
+gtk_widget_set_size_request (tab_box, 200, 75);
+gtk_widget_show (tab_box);
+//this is the button i want to add to the page
+speckle_check_button = gtk_check_button_new_with_label ( "Find speckle amplitude");
+gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(speckle_check_button), FALSE);
+gtk_widget_show (speckle_check_button);
+//i add the button to the page
+gtk_container_add (GTK_CONTAINER (tab_box), speckle_check_button);
+
+
+//block_size_spinbutton = gimp_spin_button_new (&block_size_spinbutton_value, gui_options.clone_block_size, 4, 40, 4, 4, 4, 4, 0);
+gtk_container_add (GTK_CONTAINER (tab_box), block_size_spinbutton);
+gtk_widget_show (block_size_spinbutton);
+
+//  block_size_value = gtk_adjustment_new (90, 0, 256, 1, 1, 1);
+//  block_size_hscale = gtk_hscale_new (GTK_ADJUSTMENT (block_size_value));
+//  gtk_scale_set_digits( GTK_SCALE(texture_hscale), 3);
+////  gtk_range_set_update_policy      (GtkRange      *range,   GtkUpdateType  policy);
+//  gtk_widget_set_size_request (texture_hscale, 100, 40);
+//	 gtk_widget_show (texture_hscale);
+
+gtk_container_add (GTK_CONTAINER (tab_box), texture_hscale);
+
+//then add the page to the notbook
+gtk_notebook_append_page (GTK_NOTEBOOK (notebook), tab_box, label);
 
 
 
@@ -252,15 +320,25 @@ gtk_notebook_append_page (GTK_NOTEBOOK (notebook), tab_box, label);
   //  gtk_widget_show (radius_label);
   //  gtk_box_pack_start (GTK_BOX (main_hbox), radius_label, FALSE, FALSE, 6);
   //  gtk_label_set_justify (GTK_LABEL (radius_label), GTK_JUSTIFY_RIGHT);
-  //
-  //  spinbutton = gimp_spin_button_new (&spinbutton_adj, gui_options.radius, 1, 32, 1, 1, 1, 5, 0);
-  //  gtk_box_pack_start (GTK_BOX (main_hbox), spinbutton, FALSE, FALSE, 0);
-  //  gtk_widget_show (spinbutton);
 
-//  frame_label = gtk_label_new ("<b>Modify radius</b>");
-//  gtk_widget_show (frame_label);
-//  gtk_frame_set_label_widget (GTK_FRAME (frame), frame_label);
-//  gtk_label_set_use_markup (GTK_LABEL (frame_label), TRUE);
+
+
+  vbox = gtk_vbox_new (FALSE, 0);
+  gtk_widget_show (vbox);
+
+    label = gtk_label_new ("Thread count");
+    gtk_widget_show (label);
+
+	 gtk_box_pack_start (GTK_BOX (vbox), label, FALSE, FALSE, 0);
+
+
+    thread_count_spinbutton = gimp_spin_button_new (&thread_count_spinbutton_value, gui_options.threads, 1, 8, 1, 1, 1, 1, 0);
+    gtk_box_pack_start (GTK_BOX (vbox), thread_count_spinbutton, FALSE, FALSE, 0);
+    gtk_widget_show (thread_count_spinbutton);
+
+       gtk_box_pack_start (GTK_BOX (main_hbox), vbox, FALSE, FALSE, 0);
+
+
 
 
 
@@ -277,16 +355,19 @@ gtk_notebook_append_page (GTK_NOTEBOOK (notebook), tab_box, label);
 
   g_signal_connect (texture_check_button, "clicked", G_CALLBACK (cb_texture_check_button), &gui_options);
   g_signal_connect (clone_check_button, "clicked", G_CALLBACK (cb_clone_check_button), &gui_options);
-    g_signal_connect (jpeg_check_button, "clicked", G_CALLBACK (cb_jpeg_check_button), &gui_options);
-	g_signal_connect (grain_check_button, "clicked", G_CALLBACK (cb_grain_check_button), &gui_options);
+  g_signal_connect (jpeg_check_button, "clicked", G_CALLBACK (cb_jpeg_check_button), &gui_options);
+  g_signal_connect (grain_check_button, "clicked", G_CALLBACK (cb_grain_check_button), &gui_options);
+  g_signal_connect (speckle_check_button, "clicked", G_CALLBACK (cb_speckle_check_button), &gui_options);
+  g_signal_connect (histogram_check_button, "clicked", G_CALLBACK (cb_histogram_check_button), &gui_options);
 
 
   gtk_signal_connect (GTK_OBJECT (texture_threshold_value), "value_changed", GTK_SIGNAL_FUNC (cb_texture_hscale), &gui_options);
-    gtk_signal_connect (GTK_OBJECT (compress_value), "value_changed", GTK_SIGNAL_FUNC (cb_compress_hscale), &gui_options);
+  gtk_signal_connect (GTK_OBJECT (compress_value), "value_changed", GTK_SIGNAL_FUNC (cb_compress_hscale), &gui_options);
 
-      gtk_signal_connect (GTK_OBJECT (radius_value), "value_changed", GTK_SIGNAL_FUNC (cb_radius_hscale), &gui_options);
+  gtk_signal_connect (GTK_OBJECT (radius_value), "value_changed", GTK_SIGNAL_FUNC (cb_radius_hscale), &gui_options);
 
   g_signal_connect (block_size_spinbutton_value, "value_changed", G_CALLBACK (gimp_int_adjustment_update), &gui_options.clone_block_size);
+  g_signal_connect (thread_count_spinbutton_value, "value_changed", G_CALLBACK (gimp_int_adjustment_update), &gui_options.threads);
 
 
   gtk_widget_show (dialog);
@@ -347,6 +428,22 @@ static void cb_grain_check_button( GtkWidget *widget,  gpointer   data )
 }
 
 /* Our usual callback function */
+static void cb_speckle_check_button( GtkWidget *widget,  gpointer   data )
+{
+    GUI_values *temp_vals;
+    temp_vals = (GUI_values *)data;
+
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON (widget)))
+    {
+	temp_vals->speckle_checked = TRUE;
+    }
+    else
+    {
+	temp_vals->speckle_checked = FALSE;
+    }
+}
+
+/* Our usual callback function */
 static void cb_jpeg_check_button( GtkWidget *widget,  gpointer   data )
 {
     GUI_values *temp_vals;
@@ -391,5 +488,21 @@ static void cb_clone_check_button( GtkWidget *widget,  gpointer   data )
     else
     {
 	temp_vals->clone_checked = FALSE;
+    }
+}
+
+/* Our usual callback function */
+static void cb_histogram_check_button( GtkWidget *widget,  gpointer   data )
+{
+    GUI_values *temp_vals;
+    temp_vals = (GUI_values *)data;
+
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON (widget)))
+    {
+	temp_vals->histogram_checked = TRUE;
+    }
+    else
+    {
+	temp_vals->histogram_checked = FALSE;
     }
 }
