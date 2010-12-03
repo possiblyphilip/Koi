@@ -104,7 +104,7 @@ void * grain(void *pArg)
 		    best_angle = angle;
 		}
 	    }
-//write back the best line in yellow
+//write back the best line in only if it is brighter than the other lines it is crossing
 	    for(ii = 0; ii < radius; ii++)
 	    {
 		col_offset = (ii*cos(best_angle));
@@ -113,15 +113,48 @@ void * grain(void *pArg)
 //		job_args->array_out[col+col_offset][row+row_offset][1] = 230;
 //		job_args->array_out[col+col_offset][row+row_offset][2] = 50;
 
-		job_args->array_out[col+col_offset][row+row_offset][0] = highest/radius;
-		job_args->array_out[col+col_offset][row+row_offset][1] = highest/radius;
-		job_args->array_out[col+col_offset][row+row_offset][2] = highest/radius;
+
+		if(job_args->array_out[col+col_offset][row+row_offset][0] > highest/radius)
+		{
+		    highest = 0;
+		}
+
 
 
 	    }
 
+	    if(best_angle > 3.14)
+	    {
+		best_angle-=3.14;
+	    }
+
+
+	    if(highest > 0)
+	    {
+		for(ii = 0; ii < radius; ii++)
+		{
+		    col_offset = (ii*cos(best_angle));
+		    row_offset = (ii*sin(best_angle));
+		    //		job_args->array_out[col+col_offset][row+row_offset][0] = 230;
+		    //		job_args->array_out[col+col_offset][row+row_offset][1] = 230;
+		    //		job_args->array_out[col+col_offset][row+row_offset][2] = 50;
+
+		    job_args->array_out[col+col_offset][row+row_offset][0] = highest/radius;
+		    job_args->array_out[col+col_offset][row+row_offset][1] = (best_angle/(3.14))*255;
+		    job_args->array_out[col+col_offset][row+row_offset][2] = highest/radius;
+
+		}
+	    }
+
 
 	}
+
+
+	if (row % 100 == 0)
+	{
+	    gimp_progress_update (row/job_args->height-radius);
+	}
+
     }
 
 

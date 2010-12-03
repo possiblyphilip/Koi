@@ -273,10 +273,19 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
     }
 
-    if(gui_options.texture_checked == TRUE || gui_options.grain_checked == TRUE)
+    if(gui_options.texture_checked == TRUE )
     {
 	gimp_run_procedure("gimp-desaturate",&num_return_vals, GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_END);
 	gimp_run_procedure("plug-in-edge",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_FLOAT, 9.99, GIMP_PDB_INT32, 2, GIMP_PDB_INT32, 5, GIMP_PDB_END);
+	gimp_run_procedure("plug-in-gauss",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_FLOAT, 1.0, GIMP_PDB_FLOAT, 1.0, GIMP_PDB_INT32, 1, GIMP_PDB_END);
+
+    }
+
+    if( gui_options.grain_checked == TRUE)
+    {
+	gimp_run_procedure("gimp-desaturate",&num_return_vals, GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_END);
+	gimp_run_procedure("plug-in-edge",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_FLOAT, 9.99, GIMP_PDB_INT32, 2, GIMP_PDB_INT32, 5, GIMP_PDB_END);
+
 
     }
     channels = gimp_drawable_bpp (drawable->drawable_id);
@@ -333,6 +342,8 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 //    }
 
 //making sure i have the pointer hooked up to each copy of my  job arguments
+
+    //for the GUI arguments i really need to just hook the pointer up i think
     for(ii = 0; ii < threads; ii++)
     {
 	job_args[ii].array_in = in_array;
@@ -341,6 +352,8 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	job_args[ii].gui_options.clone_block_size = gui_options.clone_block_size;
 	job_args[ii].gui_options.radius = gui_options.radius;
 	job_args[ii].gui_options.threads = gui_options.threads;
+	job_args[ii].gui_options.histogram_block_size = gui_options.histogram_block_size;
+	job_args[ii].gui_options.radius = gui_options.radius;
 
     }
 
@@ -465,6 +478,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
  if(gui_options.histogram_checked == TRUE)
  {
+
      for(ii = 0; ii < threads; ii++)
      {
 	 job_args[ii].start_colum = (width*ii) / threads;
@@ -520,7 +534,13 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
 	gimp_image_merge_down(image_id, layer, 2);
 	drawable->drawable_id = gimp_image_get_active_drawable(image_id);
-	gimp_brightness_contrast(drawable->drawable_id, 127, 127);
+	gimp_brightness_contrast(drawable->drawable_id, 126, 125);
+
+		gimp_run_procedure("plug-in-gauss",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_PDB_FLOAT, 20.0, GIMP_PDB_FLOAT, 20.0, GIMP_PDB_INT32, 1, GIMP_PDB_END);
+
+		printf("Jpeg threshold: %d\n",gui_options.jpeg_threshold);
+
+		gimp_threshold(drawable->drawable_id, gui_options.jpeg_threshold,255 );
 
 //	for(ii = 0; ii < threads; ii++)
 //	{
@@ -611,7 +631,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
     }
 
 //    gimp_run_procedure("plug-in-colortoalpha",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, drawable->drawable_id, GIMP_COLOR, (80, 190, 70), GIMP_PDB_END);
-
+gimp_progress_end ();
 }
 
 

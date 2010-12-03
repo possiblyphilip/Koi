@@ -56,14 +56,14 @@ void * histogram(void *pArg)
 
     //get the argument passed in, and set our local variables
     JOB_ARG* job_args = (JOB_ARG*)pArg;
-
-
-    block_size = job_args->gui_options.clone_block_size;
-
+    block_size = job_args->gui_options.histogram_block_size;
 
 
 
 
+
+
+    printf("Histogram block size: %d\n",block_size);
 
 
 

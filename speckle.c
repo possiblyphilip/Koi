@@ -102,45 +102,45 @@ void * speckle(void *pArg)
 	    temp = counter+1;
 	    temp%=slider_size;
 
-	    job_args->array_out[from_col][from_row][0] = abs (color_slider[temp].red - color_slider[counter].red);
+//	    job_args->array_out[from_col][from_row][0] = abs (color_slider[temp].red - color_slider[counter].red);
 
-//	    //check to see if the end of the slider is brigher than the beginning
-//	    if(color_slider[temp].red < color_slider[counter].red)
-//	    {
-//		//if its brigher and we are already going up i add to my amplitude
-//		if(up == TRUE)
-//		{
-//				    job_args->array_out[from_col][from_row][0] = amplitude;
-//		    amplitude++;
-//		}
-//		else
-//		{
-////it was goind down and turned up so we need to start the amplitude over again and write out the length of the drop
-//		    job_args->array_out[from_col][from_row][2] = amplitude;
-//
-//		    up = TRUE;
-//		    amplitude = 0;
-//
-//		}
-//	    }
-//	    else
-////it is getting darker
-//	    {
-//		if(up == FALSE)
-////it was already getting darker so ill add to its amplitude
-//		{
-//				    job_args->array_out[from_col][from_row][2] = amplitude;
-//		    amplitude++;
-//		}
-//		else
-////it just turned down and so i need to mark the brightness of the top
-//		{
-//		    job_args->array_out[from_col][from_row][0] = amplitude;
-//
-//		    up = FALSE;
-//		    amplitude = 0;
-//		}
-//	    }
+	    //check to see if the end of the slider is brigher than the beginning
+	    if(color_slider[temp].red < color_slider[counter].red)
+	    {
+		//if its brigher and we are already going up i add to my amplitude
+		if(up == TRUE)
+		{
+				    job_args->array_out[from_col][from_row][0] = amplitude;
+		    amplitude++;
+		}
+		else
+		{
+//it was goind down and turned up so we need to start the amplitude over again and write out the length of the drop
+		    job_args->array_out[from_col][from_row][2] = amplitude;
+
+		    up = TRUE;
+		    amplitude = 0;
+
+		}
+	    }
+	    else
+//it is getting darker
+	    {
+		if(up == FALSE)
+//it was already getting darker so ill add to its amplitude
+		{
+				    job_args->array_out[from_col][from_row][2] = amplitude;
+		    amplitude++;
+		}
+		else
+//it just turned down and so i need to mark the brightness of the top
+		{
+		    job_args->array_out[from_col][from_row][0] = amplitude;
+
+		    up = FALSE;
+		    amplitude = 0;
+		}
+	    }
 
 	    counter++;
 	    counter%=slider_size;

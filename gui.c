@@ -31,18 +31,22 @@ static gboolean koi_dialog (GimpDrawable *drawable)
   GtkWidget *tab_box;
     GtkWidget *thread_count_spinbutton;
   GtkWidget *block_size_spinbutton;
+    GtkWidget *histogram_block_size_spinbutton;
 
     GtkWidget *notebook;
 
    GtkWidget *radius_hscale;
   GtkWidget *texture_hscale;
     GtkWidget *compress_hscale;
+	GtkWidget *jpeg_threshold_hscale;
 
 
   GtkObject *texture_threshold_value;
+    GtkObject *jpeg_threshold_value;
     GtkObject *compress_value;
     GtkObject *radius_value;
   GtkObject *block_size_spinbutton_value;
+    GtkObject *histogram_block_size_spinbutton_value;
     GtkObject *thread_count_spinbutton_value;
 
 
@@ -61,6 +65,12 @@ static gboolean koi_dialog (GimpDrawable *drawable)
        char bufferl[32];
 
        gui_options.threads = 4;
+       gui_options.texture_threshold = 140;
+       gui_options.clone_block_size = 16;
+       gui_options.histogram_block_size = 8;
+       gui_options.radius = 20;
+       gui_options.jpeg_threshold = 64;
+       gui_options.compress = .85;
 
   gboolean   run;
 
@@ -130,7 +140,7 @@ static gboolean koi_dialog (GimpDrawable *drawable)
   //    texture_threshold_value = gtk_adjustment_new (0.0, 0.0, 101.0, 0.1, 1.0, 1.0);
 
 
-  texture_threshold_value = gtk_adjustment_new (90, 0, 256, 1, 1, 1);
+  texture_threshold_value = gtk_adjustment_new (gui_options.texture_threshold, 0, 256, 1, 1, 1);
   texture_hscale = gtk_hscale_new (GTK_ADJUSTMENT (texture_threshold_value));
   gtk_scale_set_digits( GTK_SCALE(texture_hscale), 0);
 //  gtk_range_set_update_policy      (GtkRange      *range,   GtkUpdateType  policy);
@@ -162,7 +172,7 @@ gtk_container_add (GTK_CONTAINER (tab_box), texture_hscale);
   gtk_container_add (GTK_CONTAINER (tab_box), clone_check_button);
 
 
-  block_size_spinbutton = gimp_spin_button_new (&block_size_spinbutton_value, gui_options.clone_block_size, 4, 40, 4, 4, 4, 4, 0);
+  block_size_spinbutton = gimp_spin_button_new (&block_size_spinbutton_value, gui_options.clone_block_size, gui_options.clone_block_size, 40, 4, 4, 4, 4, 0);
   gtk_container_add (GTK_CONTAINER (tab_box), block_size_spinbutton);
   gtk_widget_show (block_size_spinbutton);
 
@@ -186,10 +196,11 @@ gtk_container_add (GTK_CONTAINER (tab_box), texture_hscale);
  tab_box = gtk_vbox_new (FALSE, 6);
 
 gtk_container_border_width (GTK_CONTAINER (tab_box), 10);
-gtk_widget_set_size_request (tab_box, 200, 75);
+gtk_widget_set_size_request (tab_box, 200, 150);
 gtk_widget_show (tab_box);
 //this is the button i want to add to the page
 jpeg_check_button = gtk_check_button_new_with_label ( "Find Jpeg Age");
+gtk_widget_set_size_request (jpeg_check_button, 200, 50);
 gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(jpeg_check_button), FALSE);
 gtk_widget_show (jpeg_check_button);
 //i add the button to the page
@@ -197,14 +208,24 @@ gtk_container_add (GTK_CONTAINER (tab_box), jpeg_check_button);
 //then add the page to the notbook
 
 
-compress_value = gtk_adjustment_new (.85, 0, 1.0, .01, .01, .01);
+compress_value = gtk_adjustment_new (gui_options.compress, 0, 1.0, .01, .01, .01);
 compress_hscale = gtk_hscale_new (GTK_ADJUSTMENT (compress_value));
 gtk_scale_set_digits( GTK_SCALE(compress_hscale), 3);
 //  gtk_range_set_update_policy      (GtkRange      *range,   GtkUpdateType  policy);
-gtk_widget_set_size_request (compress_hscale, 100, 40);
+gtk_widget_set_size_request (compress_hscale, 100, 50);
        gtk_widget_show (compress_hscale);
 
 gtk_container_add (GTK_CONTAINER (tab_box), compress_hscale);
+
+
+jpeg_threshold_value = gtk_adjustment_new (gui_options.jpeg_threshold, 0, 255, 1, 1, 1);
+jpeg_threshold_hscale = gtk_hscale_new (GTK_ADJUSTMENT (jpeg_threshold_value));
+gtk_scale_set_digits( GTK_SCALE(jpeg_threshold_hscale), 0);
+//  gtk_range_set_update_policy      (GtkRange      *range,   GtkUpdateType  policy);
+gtk_widget_set_size_request (jpeg_threshold_hscale, 100, 50);
+       gtk_widget_show (jpeg_threshold_hscale);
+
+gtk_container_add (GTK_CONTAINER (tab_box), jpeg_threshold_hscale);
 
 gtk_notebook_append_page (GTK_NOTEBOOK (notebook), tab_box, label);
 
@@ -227,7 +248,7 @@ gtk_container_add (GTK_CONTAINER (tab_box), grain_check_button);
 //then add the page to the notbook
 
 
-radius_value = gtk_adjustment_new (20, 0, 50, 1, 1, 1);
+radius_value = gtk_adjustment_new (gui_options.radius, 0, 50, 1, 1, 1);
 radius_hscale = gtk_hscale_new (GTK_ADJUSTMENT (radius_value));
 gtk_scale_set_digits( GTK_SCALE(radius_hscale), 0);
 //  gtk_range_set_update_policy      (GtkRange      *range,   GtkUpdateType  policy);
@@ -254,9 +275,9 @@ gtk_widget_show (histogram_check_button);
 gtk_container_add (GTK_CONTAINER (tab_box), histogram_check_button);
 
 
-block_size_spinbutton = gimp_spin_button_new (&block_size_spinbutton_value, gui_options.clone_block_size, 4, 40, 4, 4, 4, 4, 0);
-gtk_container_add (GTK_CONTAINER (tab_box), block_size_spinbutton);
-gtk_widget_show (block_size_spinbutton);
+histogram_block_size_spinbutton = gimp_spin_button_new (&histogram_block_size_spinbutton_value, gui_options.histogram_block_size, gui_options.histogram_block_size, 40, 4, 4, 4, 4, 0);
+gtk_container_add (GTK_CONTAINER (tab_box), histogram_block_size_spinbutton);
+gtk_widget_show (histogram_block_size_spinbutton);
 
 //  block_size_value = gtk_adjustment_new (90, 0, 256, 1, 1, 1);
 //  block_size_hscale = gtk_hscale_new (GTK_ADJUSTMENT (block_size_value));
@@ -351,7 +372,8 @@ gtk_notebook_append_page (GTK_NOTEBOOK (notebook), tab_box, label);
   //  g_signal_connect (spinbutton_adj, "value_changed", G_CALLBACK (gimp_int_adjustment_update), &gui_options.radius);
 
 
-
+//I need to figure out whether or not i need to have cb functions for all of these or if i can use the built in one
+  //like i am for some of them
 
   g_signal_connect (texture_check_button, "clicked", G_CALLBACK (cb_texture_check_button), &gui_options);
   g_signal_connect (clone_check_button, "clicked", G_CALLBACK (cb_clone_check_button), &gui_options);
@@ -366,7 +388,10 @@ gtk_notebook_append_page (GTK_NOTEBOOK (notebook), tab_box, label);
 
   gtk_signal_connect (GTK_OBJECT (radius_value), "value_changed", GTK_SIGNAL_FUNC (cb_radius_hscale), &gui_options);
 
+  gtk_signal_connect (GTK_OBJECT (jpeg_threshold_value), "value_changed", GTK_SIGNAL_FUNC (cb_jpeg_threshold_hscale), &gui_options);
+
   g_signal_connect (block_size_spinbutton_value, "value_changed", G_CALLBACK (gimp_int_adjustment_update), &gui_options.clone_block_size);
+  g_signal_connect (histogram_block_size_spinbutton_value, "value_changed", G_CALLBACK (gimp_int_adjustment_update), &gui_options.histogram_block_size);
   g_signal_connect (thread_count_spinbutton_value, "value_changed", G_CALLBACK (gimp_int_adjustment_update), &gui_options.threads);
 
 
@@ -387,6 +412,17 @@ static void cb_compress_hscale( GtkAdjustment *adj,  gpointer   data )
 
     temp_vals->compress = gtk_adjustment_get_value(adj);
 //    temp_vals->texture_threshold = gtk_adjustment_set_value(adj, adj->value);
+
+}
+
+/* Our usual callback function */
+static void cb_jpeg_threshold_hscale( GtkAdjustment *adj,  gpointer   data )
+{
+    GUI_values *temp_vals;
+    temp_vals = (GUI_values *)data;
+
+    temp_vals->jpeg_threshold = gtk_adjustment_get_value(adj);
+
 
 }
 

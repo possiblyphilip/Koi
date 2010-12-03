@@ -39,7 +39,7 @@ void * find_clone_job(void *pArg)
     guchar red, green, blue;
 
 
-    //get the argument passed in, and set our local variables
+//get the argument passed in, and set our local variables
     JOB_ARG* job_args = (JOB_ARG*)pArg;
 
     block_size = job_args->gui_options.clone_block_size;
