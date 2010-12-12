@@ -39,195 +39,206 @@ void * find_clone_job(void *pArg)
     guchar red, green, blue;
 
 
-//get the argument passed in, and set our local variables
+	//get the argument passed in, and set our local variables
     JOB_ARG* job_args = (JOB_ARG*)pArg;
 
-    block_size = job_args->gui_options.clone_block_size;
+	block_size = job_args->gui_options->clone_block_size;
 
     clone_block_metric *block_metric_array;
     clone_block_metric slider[block_size];
 
-//here i am creating my block metric array to store the metric that i am sorting each block by
+	//here i am creating my block metric array to store the metric that i am sorting each block by
     num_blocks = job_args->height*job_args->width;
     block_metric_array = (clone_block_metric*)malloc (num_blocks * sizeof(clone_block_metric));
 
-//set them all to zero
+	//set them all to zero
     for(ii = 0; ii < num_blocks; ii++)
     {
-	block_metric_array[ii].h_metric = 0;
-	block_metric_array[ii].s_metric = 0;
-	block_metric_array[ii].l_metric = 0;
-	block_metric_array[ii].metric = 0;
-	block_metric_array[ii].col = 0;
-	block_metric_array[ii].row = 0;
+		block_metric_array[ii].h_metric = 0;
+		block_metric_array[ii].s_metric = 0;
+		block_metric_array[ii].l_metric = 0;
+		block_metric_array[ii].metric = 0;
+		block_metric_array[ii].col = 0;
+		block_metric_array[ii].row = 0;
     }
 
     ii = 0;
 
 
-//this snipit should let the colums blend in the middle of the image without writing over the edge of the image
-//basically this allows each thread to read the other threads data so there are not gaps between
-//the work each thread does
-    if(job_args->start_colum+job_args->width+block_size < job_args->width*job_args->gui_options.threads)
+
+
+	//this snipit should let the colums blend in the middle of the image without writing over the edge of the image
+	//basically this allows each thread to read the other threads data so there are not gaps between
+	//the work each thread does
+	if(job_args->start_colum+job_args->width+block_size < job_args->width*job_args->gui_options->threads)
     {
-	max_col = job_args->start_colum+job_args->width;
+		max_col = job_args->start_colum+job_args->width;
     }
     else
     {
-	max_col = (job_args->width*job_args->gui_options.threads) - block_size;
+		max_col = (job_args->width*job_args->gui_options->threads) - block_size;
     }
 
 
-//me happy double nested loops
-//i just run through things right to left, bottom to top
+	//me happy double nested loops
+	//i just run through things right to left, bottom to top
     for (from_row = 0; from_row < job_args->height-block_size ; from_row++)
     {
-	for (from_col = job_args->start_colum; from_col < max_col; from_col++)
-	{
-
-//calculate metric
-	    min = 300;
-	    max = 0;
-//this way the block knows where it came from
-	    block_metric_array[ii].row = from_row;
-	    block_metric_array[ii].col = from_col;	    
-//loop through the block
-	    for (block_row = 0; block_row < block_size; block_row++)
-	    {
-		for (block_col = 0; block_col < block_size; block_col++)
+		for (from_col = job_args->start_colum; from_col < max_col; from_col++)
 		{
 
+			//calculate metric
+			min = 300;
+			max = 0;
+			//this way the block knows where it came from
+			block_metric_array[ii].row = from_row;
+			block_metric_array[ii].col = from_col;
+			//loop through the block
+			for (block_row = 0; block_row < block_size; block_row++)
+			{
+				for (block_col = 0; block_col < block_size; block_col++)
+				{
 
-//summing the RGB color values should make blocks sort out different from each other
-		    block_metric_array[ii].metric += job_args->array_in[from_col+block_col][from_row+block_row][0];
-		    block_metric_array[ii].metric += job_args->array_in[from_col+block_col][from_row+block_row][1];
-		    block_metric_array[ii].metric += job_args->array_in[from_col+block_col][from_row+block_row][2];
-		    //
-		    //			    red = job_args->array_in[from_col+block_col][from_row+block_row][0];
-		    //			    green = job_args->array_in[from_col+block_col][from_row+block_row][1];
-		    //			    blue = job_args->array_in[from_col+block_col][from_row+block_row][2];
-		    //
-		    //
-		    //
-		    //			//    (red-blue)/255
-		    //
-		    ////				    blue/255
-		    //
-		    //
-		    //			    if(red > max)
-		    //			    {
-		    //				max = red;
-		    //			    }
-		    //
-		    //			    if(green > max)
-		    //			    {
-		    //				max = green;
-		    //			    }
-		    //
-		    //			    if(blue > max)
-		    //			    {
-		    //				max = blue;
-		    //			    }
-		    //			//min
-		    //			    if(red < min)
-		    //			    {
-		    //				min = red;
-		    //			    }
-		    //			    if(green < min)
-		    //			    {
-		    //				min = green;
-		    //			    }
-		    //			    if(blue < min)
-		    //			    {
-		    //				min = blue;
-		    //			    }
-		    //
-		    //
-		    //	//		    block_metric_array[ii].metric += green;
-		    //			//	block_metric_array[ii].metric += 1;
-		    //
-		    //			    hsl = RGBtoHSL(red, green, blue);
-		    //
-		    //			    block_metric_array[ii].h_metric += hsl.h;
-		    //			    block_metric_array[ii].s_metric += hsl.s;
-		    //			    block_metric_array[ii].l_metric += hsl.l;
 
+					//summing the RGB color values should make blocks sort out different from each other
+					block_metric_array[ii].metric += job_args->array_in[from_col+block_col][from_row+block_row].red;
+					block_metric_array[ii].metric += job_args->array_in[from_col+block_col][from_row+block_row].green;
+					block_metric_array[ii].metric += job_args->array_in[from_col+block_col][from_row+block_row].blue;
+
+
+					//
+					//			    red = job_args->array_in[from_col+block_col][from_row+block_row].red;
+					//			    green = job_args->array_in[from_col+block_col][from_row+block_row].green;
+					//			    blue = job_args->array_in[from_col+block_col][from_row+block_row].blue;
+					//
+					//
+					//
+					//			//    (red-blue)/255
+					//
+					////				    blue/255
+					//
+					//
+					//			    if(red > max)
+					//			    {
+					//				max = red;
+					//			    }
+					//
+					//			    if(green > max)
+					//			    {
+					//				max = green;
+					//			    }
+					//
+					//			    if(blue > max)
+					//			    {
+					//				max = blue;
+					//			    }
+					//			//min
+					//			    if(red < min)
+					//			    {
+					//				min = red;
+					//			    }
+					//			    if(green < min)
+					//			    {
+					//				min = green;
+					//			    }
+					//			    if(blue < min)
+					//			    {
+					//				min = blue;
+					//			    }
+					//
+					//
+					//	//		    block_metric_array[ii].metric += green;
+					//			//	block_metric_array[ii].metric += 1;
+					//
+					//			    hsl = RGBtoHSL(red, green, blue);
+					//
+					//			    block_metric_array[ii].h_metric += hsl.h;
+					//			    block_metric_array[ii].s_metric += hsl.s;
+					//			    block_metric_array[ii].l_metric += hsl.l;
+
+				}
+			}
+			ii++;
 		}
-	    }	   	    
-	    ii++;	    
-	}
+
+
+//the height * 2 is because this is the first of 2 for loops
+		job_args->progress = (double)from_row / (job_args->height * 2);
     }
 
 
 
-//sort array using qsort functions
+	//sort array using qsort functions
     qsort(block_metric_array, num_blocks, sizeof(clone_block_metric), clone_metric_comp);
 
-//copying the original to my output so i can have the original image as my output image with the blocks written over it
-    for (from_row = 0; from_row < job_args->height-block_size; from_row++)
-    {
-    	for (from_col = job_args->start_colum; from_col < max_col; from_col++)
-    	{
-	    job_args->array_out[from_col][from_row][0] = job_args->array_in[from_col][from_row][0];
-	    job_args->array_out[from_col][from_row][1] = job_args->array_in[from_col][from_row][1];
-	    job_args->array_out[from_col][from_row][2] = job_args->array_in[from_col][from_row][2];
-	}
-    }
 
-
-
-//finding matches and writing them out to the output image
-    for(ii = 1; ii< num_blocks; ii++)
-    {
-//this disallows any blocks that are totally white or black
-	if( block_metric_array[ii].metric != 0 &&  block_metric_array[ii].metric != 255*3*block_size*block_size)
-	{
-//this checks to see if two blocks have the same metric
-	    if(block_metric_array[ii].metric == block_metric_array[ii-1].metric)
-//	    if( abs(block_metric_array[ii].metric - block_metric_array[ii-1].metric) < block_size*10)
-	    {
-//dissalows blocks from matching if they are too close
-		if(abs(block_metric_array[ii].col-block_metric_array[ii-1].col) > block_size || abs(block_metric_array[ii].row-block_metric_array[ii-1].row) > block_size)
+	//copying the original to my output so i can have the original image as my output image with the blocks written over it
+		for (from_row = 0; from_row < job_args->height-block_size; from_row++)
 		{
-
-		    temp = 0;
-//subtracts the two blocks to see if they go to zero (perfect match)
-		    for (block_row = 0; block_row < block_size ; block_row++)
-		    {
-			for (block_col = 0; block_col < block_size; block_col++)
+			for (from_col = job_args->start_colum; from_col < max_col; from_col++)
 			{
-
-			    temp += abs(job_args->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][1] - job_args->array_in[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row][1]);
-
+				job_args->array_out[from_col][from_row].red = job_args->array_in[from_col][from_row].red;
+				job_args->array_out[from_col][from_row].green = job_args->array_in[from_col][from_row].green;
+				job_args->array_out[from_col][from_row].blue = job_args->array_in[from_col][from_row].blue;
 			}
-		    }
-//if the block matches close enough i let it through
-		    if(temp <= block_size*10)
-		    {
-//highlighting the blocks that match
-			for (block_row = 0; block_row < block_size ; block_row++)
-			{
-			    for (block_col = 0; block_col < block_size; block_col++)
-			    {
-
-				job_args->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][0] = 50;
-				job_args->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][1] = 190;
-				job_args->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row][2] = 170;
-
-				job_args->array_out[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row][0] = 255;
-				job_args->array_out[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row][1] = 115;
-				job_args->array_out[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row][2] = 0;
-
-			    }
-			}
-		    }
-
 		}
 
-	    }
-	}
+	//finding matches and writing them out to the output image
+    for(ii = 1; ii< num_blocks; ii++)
+    {
+		//this disallows any blocks that are totally white or black
+		if( block_metric_array[ii].metric != 0 &&  block_metric_array[ii].metric != 255*3*block_size*block_size)
+		{
+			//this checks to see if two blocks have the same metric
+			if(block_metric_array[ii].metric == block_metric_array[ii-1].metric)
+				//	    if( abs(block_metric_array[ii].metric - block_metric_array[ii-1].metric) < block_size*10)
+			{
+				//dissalows blocks from matching if they are too close
+				if(abs(block_metric_array[ii].col-block_metric_array[ii-1].col) > block_size || abs(block_metric_array[ii].row-block_metric_array[ii-1].row) > block_size)
+				{
+
+					temp = 0;
+					//subtracts the two blocks to see if they go to zero (perfect match)
+					for (block_row = 0; block_row < block_size ; block_row++)
+					{
+						for (block_col = 0; block_col < block_size; block_col++)
+						{
+
+							temp += abs(job_args->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].green - job_args->array_in[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row].green);
+
+						}
+					}
+					//if the block matches close enough i let it through
+					if(temp <= block_size*10)
+					{
+						//highlighting the blocks that match
+						for (block_row = 0; block_row < block_size ; block_row++)
+						{
+							for (block_col = 0; block_col < block_size; block_col++)
+							{
+
+								job_args->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].red = 50;
+								job_args->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].green = 190;
+								job_args->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].blue = 170;
+
+								job_args->array_out[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row].red = 255;
+								job_args->array_out[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row].green = 115;
+								job_args->array_out[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row].blue = 0;
+
+							}
+						}
+					}
+
+				}
+
+			}
+		}
+
+		job_args->progress = (double)ii / (num_blocks * 2) + .5;
 
     }
+
+	job_args->progress = 1;
 
     return NULL;
 }
@@ -236,7 +247,105 @@ void * find_clone_job(void *pArg)
 int clone_metric_comp(const void *a, const void *b)
 
 {
-	    clone_block_metric* ia = (clone_block_metric *)a;
-	    clone_block_metric* ib = (clone_block_metric *)b;
-	    return ia->metric  - ib->metric;
+	clone_block_metric* ia = (clone_block_metric *)a;
+	clone_block_metric* ib = (clone_block_metric *)b;
+	return ia->metric  - ib->metric;
+}
+
+HSL rgb_to_hsl( guchar r, guchar g, guchar b)
+{
+
+	HSL temp;
+
+	double L = 0;
+	double S = 0;
+	double H = 0;
+
+	double max_color = 0;
+
+	double min_color = 0;
+
+	double r_percent = ((double)r)/255;
+	double g_percent = ((double)g)/255;
+	double b_percent = ((double)b)/255;
+
+
+	if((r_percent >= g_percent) && (r_percent >= b_percent))
+	{
+	max_color = r_percent;
+	}
+
+	if((g_percent >= r_percent) && (g_percent >= b_percent))
+
+	{
+	max_color = g_percent;
+	}
+
+	if((b_percent >= r_percent) && (b_percent >= g_percent))
+	{
+
+	max_color = b_percent;
+	}
+
+	if((r_percent <= g_percent) && (r_percent <= b_percent))
+	{
+	min_color = r_percent;
+	}
+
+	if((g_percent <= r_percent) && (g_percent <= b_percent))
+	{
+	min_color = g_percent;
+	}
+
+	if((b_percent <= r_percent) && (b_percent <= g_percent))
+	{
+	min_color = b_percent;
+	}
+
+	L = (max_color + min_color)/2;
+
+	if(max_color == min_color)
+	{
+	S = 0;
+	H = 0;
+	}
+	else
+	{
+	if(L < .50)
+	{
+		S = (max_color - min_color)/(max_color + min_color);
+	}
+	else
+	{
+		S = (max_color - min_color)/(2 - max_color - min_color);
+	}
+
+	if(max_color == r_percent)
+	{
+		H = (g_percent - b_percent)/(max_color - min_color);
+	}
+
+	if(max_color == g_percent)
+	{
+		H = 2 + (b_percent - r_percent)/(max_color - min_color);
+	}
+
+	if(max_color == b_percent)
+	{
+		H = 4 + (r_percent - g_percent)/(max_color - min_color);
+	}
+	}
+
+	temp.s = (int)(S*100);
+	temp.l = (int)(L*100);
+
+	H = H*60;
+	if(H < 0)
+	{
+	H += 360;
+	}
+
+	temp.h  = (int)H;
+
+	return temp;
 }

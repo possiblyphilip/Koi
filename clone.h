@@ -46,7 +46,7 @@ typedef struct
     int l;
 }HSL;
 
-HSL RGBtoHSL( guchar r, guchar g, guchar b);
+HSL rgb_to_hsl( guchar r, guchar g, guchar b);
 
 int clone_metric_comp(const void *a, const void *b);
 

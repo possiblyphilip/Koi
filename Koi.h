@@ -29,18 +29,10 @@
 
 #include "gui.h"
 
-typedef struct
-{
-    guchar ***array_in;
-    guchar ***array_out;
-    int start_row;
-    int start_colum;
-    int height;
-    int width;
-    float percent;
-    GUI_values gui_options;
-}JOB_ARG;
+static void query (void);
+static void run (const char *name, int nparams, const GimpParam *param,  int *nreturn_vals, GimpParam **return_vals);
 
+//i really dont know what this is doing because the start values are hardcoded in the gui code
 /* Set up default values for options */
 static GUI_values gui_options =
 {
@@ -49,9 +41,9 @@ static GUI_values gui_options =
     0   //clone
 };
 
-static void query (void);
-static void run (const char *name, int nparams, const GimpParam *param,  int *nreturn_vals, GimpParam **return_vals);
 
+
+//dont know what this is doing either
 GimpPlugInInfo PLUG_IN_INFO =
 {
   NULL,
@@ -60,22 +52,29 @@ GimpPlugInInfo PLUG_IN_INFO =
   run
 };
 
+typedef struct
+{
+	guchar red;
+	guchar green;
+	guchar blue;
+}PIXEL;
+
+typedef struct
+{
+	PIXEL **array_in;
+	PIXEL **array_out;
+	int start_row;
+	int start_colum;
+	int height;
+	int width;
+	double progress;
+	GUI_values *gui_options;
+}JOB_ARG;
 
 static void koi (GimpDrawable  *drawable, GimpPreview  *preview);
-
-
 static gboolean koi_dialog (GimpDrawable *drawable);
 
-
-void * find_blur_job(void *pArg);
-void * find_clone_job(void *pArg);
-void free_pixel_array(guchar ***array, int width, int height, int depth);
-void allocate_pixel_array(guchar ****array, int width, int height, int depth);
-
-
-
-
-
-
+void allocate_pixel_array(PIXEL ***array, int width, int height);
+void free_pixel_array(PIXEL **array, int width);
 
 #endif // KOI_H

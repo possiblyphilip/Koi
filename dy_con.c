@@ -27,7 +27,7 @@ void * dy_con(void *pArg)
     guchar right_slider[size];
     int ii;
     int counter = 0;
-  //  guchar temp;
+	//  guchar temp;
     int row, col, temp;
     int left_sum;
     int right_sum;
@@ -40,41 +40,41 @@ void * dy_con(void *pArg)
     for (row = 0; row < job_args->height ; row++)
     {
 
-	//set my sliders to zero to wipe out old data at the end of each row
-	for(ii = 0; ii < size; ii++)
-	{
-	    left_slider[ii] = 0;
-	    right_slider[ii] = 0;
-	}
+		//set my sliders to zero to wipe out old data at the end of each row
+		for(ii = 0; ii < size; ii++)
+		{
+			left_slider[ii] = 0;
+			right_slider[ii] = 0;
+		}
 
-	for (col = job_args->start_colum; col < job_args->start_colum+job_args->width-size; col++)
-	{
-	    //set the current element in the sliders to our newest pixel values
-	    left_slider[counter] = job_args->array_in[col][row][0];
-	    right_slider[counter] = job_args->array_in[col+size][row][0];
-	    left_sum = 0;
-	    right_sum = 0;
+		for (col = job_args->start_colum; col < job_args->start_colum+job_args->width-size; col++)
+		{
+			//set the current element in the sliders to our newest pixel values
+			left_slider[counter] = job_args->array_in[col][row].red;
+			right_slider[counter] = job_args->array_in[col+size][row].red;
+			left_sum = 0;
+			right_sum = 0;
 
-	    for(ii = 0; ii < size; ii++)
-	    {
+			for(ii = 0; ii < size; ii++)
+			{
 
-		left_sum += left_slider[ii];
-		right_sum += right_slider[ii];
-	    }
+				left_sum += left_slider[ii];
+				right_sum += right_slider[ii];
+			}
 
-	    temp = abs((left_sum/size)-(right_sum/size));
+			temp = abs((left_sum/size)-(right_sum/size));
 
-	    temp =(1-(1/(1+.008*temp*temp)))*200;
+			temp =(1-(1/(1+.008*temp*temp)))*200;
 
-	    job_args->array_out[col][row][0] = temp;
-	    job_args->array_out[col][row][1] = temp;
-	    job_args->array_out[col][row][2] = temp;
+			job_args->array_out[col][row].red = temp;
+			job_args->array_out[col][row].green = temp;
+			job_args->array_out[col][row].blue = temp;
 
-	    //this will reset my slider counter so i dont have to make a queue or anything slow like that
-	    counter++;
-	    counter%=size;
+			//this will reset my slider counter so i dont have to make a queue or anything slow like that
+			counter++;
+			counter%=size;
 
-	}
+		}
     }
 
 

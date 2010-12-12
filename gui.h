@@ -9,16 +9,16 @@ typedef struct
     gboolean texture_checked;
 	int texture_threshold;
 	int jpeg_threshold;
-		float compress;
-		int radius;
+	float compress;
+	int radius;
 	int clone_block_size;
 	int histogram_block_size;
 	int threads;
     gboolean clone_checked;
-     gboolean grain_checked;
-	 gboolean speckle_checked;
-     gboolean jpeg_checked;
-	  gboolean histogram_checked;
+	gboolean grain_checked;
+	gboolean speckle_checked;
+	gboolean jpeg_checked;
+	gboolean histogram_checked;
 } GUI_values;
 
 static gboolean koi_dialog (GimpDrawable *drawable);
