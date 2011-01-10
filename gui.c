@@ -1,31 +1,3 @@
-//void create_gui()
-//{
-//	for (ii=0; ii<num_algs; ii++)
-//	{
-//		make_check_box(arr[ii].name);
-//		gtk_add_tab(stuff, arr[ii].make_tab(ags));
-//	}
-//
-//	gtk_gui();
-//
-//	for (ii=0; ii<num_algs; ii++)
-//	{
-//		if (arr[ii].checked) arr[ii].func(params);
-//	}
-//}
-//
-//int slider_value;
-//
-//void alg(params)
-//{
-//	foo(slider_value);
-//}
-//
-//tab_stuff *make_tab()
-//{
-//	slider_value = 7;
-//}
-
 /*
   Koi - a GIMP image authentication plugin
 	Copyright (C) 2010  ben howard
@@ -44,14 +16,11 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "clone.h"
+#include "grain.h"
 #include "gui.h"
 
-	#define NUM_PLUGINS 1
+	#define NUM_PLUGINS 2
 	KOI_PLUGIN* plugin[NUM_PLUGINS];
-
-
-
-
 
 static gboolean koi_dialog (GimpDrawable *drawable)
 {
@@ -96,6 +65,9 @@ static gboolean koi_dialog (GimpDrawable *drawable)
 	//create plugins and link them into the list
 	create_clone_plugin();
 	plugin[0] = &clone_plugin;
+
+	create_grain_plugin();
+	plugin[1] = &grain_plugin;
 
 	main_vbox = gtk_vbox_new (FALSE, 6);
 	gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), main_vbox);

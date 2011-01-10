@@ -16,9 +16,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "Koi.h"
 #include"grain.h"
 
-void * grain(void *pArg)
+gdouble grain_radius = 16;
+
+void * grain_highlighter_algorithm(JOB_ARG *job)
 {
 
     int radius;
@@ -40,48 +43,47 @@ void * grain(void *pArg)
     int min_col;
 
 
-    //get the argument passed in, and set our local variables
-    JOB_ARG* job_args = (JOB_ARG*)pArg;
+	printf("inside %s thread %d\n", grain_plugin.name, job->thread);
 
-	radius = job_args->gui_options->radius;
+	radius = grain_radius;
 
     //this snipit should let the colums blend in the middle of the image without writing over the edge of the image
-	if(job_args->start_colum+job_args->width+radius < job_args->width*job_args->gui_options->threads)
+	if(job->start_colum+job->width+radius < job->width*NUM_THREADS)
 	{
-	    max_col = job_args->start_colum+job_args->width;
+		max_col = job->start_colum+job->width;
 
 	}
 	else
 	{
-		max_col = (job_args->width*job_args->gui_options->threads) - radius;
+		max_col = (job->width*NUM_THREADS) - radius;
 	}
 
 
 	//if im at the left wall i need to start over at least one radius so i dont run off the page
-	if(job_args->start_colum == 0)
+	if(job->start_colum == 0)
 	{
 	    min_col = radius;
 
 	}
 	else
 	{
-	    min_col = job_args->start_colum;
+		min_col = job->start_colum;
 	}
 
     //set my image to black
 
-    for (row = 0; row < job_args->height; row++)
+	for (row = 0; row < job->height; row++)
     {
-		for (col = job_args->start_colum; col < job_args->start_colum+job_args->width; col++)
+		for (col = job->start_colum; col < job->start_colum+job->width; col++)
 		{
-			job_args->array_out[col][row].red = 0;
-			job_args->array_out[col][row].green = 0;
-			job_args->array_out[col][row].blue = 0;
+			job->array_out[col][row].red = 0;
+			job->array_out[col][row].green = 0;
+			job->array_out[col][row].blue = 0;
 		}
     }
 
 
-    for (row = radius; row < job_args->height-radius ; row+=radius/4)
+	for (row = radius; row < job->height-radius ; row+=radius/4)
     {
 		for (col = min_col; col < max_col; col+=radius/4)
 		{
@@ -95,7 +97,7 @@ void * grain(void *pArg)
 				{
 					col_offset = (ii*cos(angle));
 					row_offset = (ii*sin(angle));
-					temp +=  job_args->array_in[col+col_offset][row+row_offset].red;
+					temp +=  job->array_in[col+col_offset][row+row_offset].red;
 				}
 
 				if(temp > highest)
@@ -109,12 +111,12 @@ void * grain(void *pArg)
 			{
 				col_offset = (ii*cos(best_angle));
 				row_offset = (ii*sin(best_angle));
-				//		job_args->array_out[col+col_offset][row+row_offset].red = 230;
-				//		job_args->array_out[col+col_offset][row+row_offset].green = 230;
-				//		job_args->array_out[col+col_offset][row+row_offset].blue = 50;
+				//		job->array_out[col+col_offset][row+row_offset].red = 230;
+				//		job->array_out[col+col_offset][row+row_offset].green = 230;
+				//		job->array_out[col+col_offset][row+row_offset].blue = 50;
 
 
-				if(job_args->array_out[col+col_offset][row+row_offset].red > highest/radius)
+				if(job->array_out[col+col_offset][row+row_offset].red > highest/radius)
 				{
 					highest = 0;
 				}
@@ -135,13 +137,13 @@ void * grain(void *pArg)
 				{
 					col_offset = (ii*cos(best_angle));
 					row_offset = (ii*sin(best_angle));
-					//		job_args->array_out[col+col_offset][row+row_offset].red = 230;
-					//		job_args->array_out[col+col_offset][row+row_offset].green = 230;
-					//		job_args->array_out[col+col_offset][row+row_offset].blue = 50;
+					//		job->array_out[col+col_offset][row+row_offset].red = 230;
+					//		job->array_out[col+col_offset][row+row_offset].green = 230;
+					//		job->array_out[col+col_offset][row+row_offset].blue = 50;
 
-					job_args->array_out[col+col_offset][row+row_offset].red = highest/radius;
-					job_args->array_out[col+col_offset][row+row_offset].green = (best_angle/(3.14))*255;
-					job_args->array_out[col+col_offset][row+row_offset].blue = highest/radius;
+					job->array_out[col+col_offset][row+row_offset].red = highest/radius;
+					job->array_out[col+col_offset][row+row_offset].green = (best_angle/(3.14))*255;
+					job->array_out[col+col_offset][row+row_offset].blue = highest/radius;
 
 				}
 			}
@@ -150,11 +152,95 @@ void * grain(void *pArg)
 		}
 
 
-		job_args->progress = (double)row / job_args->height;
+		job->progress = (double)row / job->height;
 
     }
 
-	job_args->progress = 1;
+	job->progress = 1;
 
     return NULL;
+}
+
+///* Our usual callback function */
+//static void cb_radius_hscale( GtkAdjustment *adj,  gpointer   data )
+//{
+//	GUI_values *temp_vals;
+//	temp_vals = (GUI_values *)data;
+//
+//	temp_vals->radius = gtk_adjustment_get_value(adj);
+//
+//}
+
+/* Our usual callback function */
+static void cb_grain_check_button( GtkWidget *widget,  gpointer   data )
+{
+
+	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON (widget)))
+	{
+		grain_plugin.checked = TRUE;
+	}
+	else
+	{
+		grain_plugin.checked = FALSE;
+	}
+}
+
+GtkWidget * create_grain_gui()
+{
+
+	printf("creating grain gui\n");
+
+	GtkWidget *label;
+	GtkWidget *tab_box;
+	GtkWidget *grain_check_button;
+	GtkWidget *radius_hscale;
+	GtkObject *radius_value;
+
+	label = gtk_label_new ("Grain");
+
+	//so this is the page
+	tab_box = gtk_vbox_new (FALSE, 6);
+
+	gtk_container_border_width (GTK_CONTAINER (tab_box), 10);
+	gtk_widget_set_size_request (tab_box, 200, 75);
+	gtk_widget_show (tab_box);
+	//this is the button i want to add to the page
+	grain_check_button = gtk_check_button_new_with_label ( "Find image grain");
+	//this should make sure that it shows the correct status
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(grain_check_button), grain_plugin.checked);
+	gtk_widget_show (grain_check_button);
+	//i add the button to the page
+	gtk_container_add (GTK_CONTAINER (tab_box), grain_check_button);
+	//then add the page to the notbook
+
+
+	radius_value = gtk_adjustment_new (grain_radius, 0, 50, 1, 1, 1);
+	radius_hscale = gtk_hscale_new (GTK_ADJUSTMENT (radius_value));
+	gtk_scale_set_digits( GTK_SCALE(radius_hscale), 0);
+	//  gtk_range_set_update_policy      (GtkRange      *range,   GtkUpdateType  policy);
+	gtk_widget_set_size_request (radius_hscale, 100, 40);
+	gtk_widget_show (radius_hscale);
+
+	g_signal_connect (grain_check_button, "clicked", G_CALLBACK (cb_grain_check_button), &grain_plugin.checked);
+//	gtk_signal_connect (GTK_OBJECT (radius_value), "value_changed", GTK_SIGNAL_FUNC (cb_radius_hscale), &grain_radius);
+	g_signal_connect (GTK_OBJECT (radius_value), "value_changed", G_CALLBACK (gimp_int_adjustment_update), &grain_radius);
+
+	gtk_container_add (GTK_CONTAINER (tab_box), radius_hscale);
+
+	printf("grain gui created\n");
+
+	return tab_box;
+}
+
+void create_grain_plugin()
+{
+	printf("creating grain plugin\n");
+	grain_plugin.checked = FALSE;
+	grain_plugin.name = "Grain Highliter";
+	grain_plugin.label = gtk_label_new (grain_plugin.name);
+	grain_plugin.algorithm = &grain_highlighter_algorithm;
+	grain_plugin.create_gui = &create_grain_gui;
+
+	printf("clone grain created\n");
+
 }

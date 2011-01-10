@@ -34,8 +34,12 @@
 #include "Koi.h"
 
 #include "gui.c"
+
 #include "clone.h"
 #include "clone.c"
+
+#include "grain.h"
+#include "grain.c"
 
 
 MAIN()
@@ -62,19 +66,19 @@ MAIN()
 	};
 
 	gimp_install_procedure (
-			"plug-in-Koi-rebuild",
-			"Koi rebuild",
+			"plug-in-Koi",
+			"Koi",
 			"Highlights image forgery",
 			"ben howard",
 			"Copyright ben howard",
 			"2010",
-			"_Koi_rebuild",
+			"_Koi",
 			"RGB*, GRAY*",
 			GIMP_PLUGIN,
 			G_N_ELEMENTS (args), 0,
 			args, NULL);
 
-	gimp_plugin_menu_register ("plug-in-Koi-rebuild", "<Image>/Filters/Misc");
+	gimp_plugin_menu_register ("plug-in-Koi", "<Image>/Filters/Misc");
 }
 
 static void run (const char *name, int nparams, const GimpParam *param,  int *nreturn_vals, GimpParam **return_vals)
@@ -222,9 +226,6 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
 		//set the layer i want to the bottom most layer
 		layer = layer_array[num_layers-1];
-
-		//make a copy of the bottom most layer
-		new_layer = gimp_layer_copy(layer);
 	}
 
 	if(width < 10 || height < 10)
@@ -287,6 +288,9 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	{
 		if(plugin[jj]->checked)
 		{
+			//make a copy of the bottom most layer
+			new_layer = gimp_layer_copy(layer);
+
 			//Add the new layer to this image as the top layer
 			if (gimp_image_add_layer(image_id, new_layer, 0) != TRUE)
 			{

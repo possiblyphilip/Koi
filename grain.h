@@ -21,4 +21,10 @@
 #ifndef GRAIN_H
 #define GRAIN_H
 
+GtkWidget * create_grain_gui();
+void create_grain_plugin();
+
+KOI_PLUGIN grain_plugin;
+
+
 #endif // GRAIN_H
