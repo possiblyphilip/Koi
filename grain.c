@@ -19,7 +19,7 @@
 #include "Koi.h"
 #include"grain.h"
 
-gdouble grain_radius = 16;
+int grain_radius = 16;
 
 void * grain_highlighter_algorithm(JOB_ARG *job)
 {
@@ -45,7 +45,11 @@ void * grain_highlighter_algorithm(JOB_ARG *job)
 
 	printf("inside %s thread %d\n", grain_plugin.name, job->thread);
 
+
+
 	radius = grain_radius;
+
+	printf("radius = %d\n", radius);
 
     //this snipit should let the colums blend in the middle of the image without writing over the edge of the image
 	if(job->start_colum+job->width+radius < job->width*NUM_THREADS)
@@ -241,6 +245,6 @@ void create_grain_plugin()
 	grain_plugin.algorithm = &grain_highlighter_algorithm;
 	grain_plugin.create_gui = &create_grain_gui;
 
-	printf("clone grain created\n");
+	printf("grain plugin created\n");
 
 }

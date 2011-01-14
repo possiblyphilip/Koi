@@ -28,28 +28,8 @@
 
 #include "gui.h"
 
-
-
-
-//
-//{
-//    {1, "my algo", alg_func, stuff},
-//
-//}
-
 static void query (void);
 static void run (const char *name, int nparams, const GimpParam *param,  int *nreturn_vals, GimpParam **return_vals);
-
-//i really dont know what this is doing because the start values are hardcoded in the gui code
-/* Set up default values for options */
-//static GUI_values gui_options =
-//{
-//  0,  //preview
-//  0,   //texture
-//    0   //clone
-//};
-
-
 
 //dont know what this is doing either
 GimpPlugInInfo PLUG_IN_INFO =
@@ -71,6 +51,8 @@ typedef struct
 {
 	PIXEL **array_in;
 	PIXEL **array_out;
+	gint32 image_id;
+	GimpDrawable *drawable;
 	int start_row;
 	int start_colum;
 	int height;

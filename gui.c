@@ -17,9 +17,11 @@
 */
 #include "clone.h"
 #include "grain.h"
+#include "texture.h"
+#include "jpeg_compress.h"
 #include "gui.h"
 
-	#define NUM_PLUGINS 2
+	#define NUM_PLUGINS 4
 	KOI_PLUGIN* plugin[NUM_PLUGINS];
 
 static gboolean koi_dialog (GimpDrawable *drawable)
@@ -68,6 +70,12 @@ static gboolean koi_dialog (GimpDrawable *drawable)
 
 	create_grain_plugin();
 	plugin[1] = &grain_plugin;
+
+	create_texture_plugin();
+	plugin[2] = &texture_plugin;
+
+	create_jpeg_plugin();
+	plugin[3] = &jpeg_plugin;
 
 	main_vbox = gtk_vbox_new (FALSE, 6);
 	gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), main_vbox);

@@ -23,4 +23,9 @@
 
 #include <math.h>
 
+GtkWidget * create_texture_gui();
+void create_texture_plugin();
+
+KOI_PLUGIN texture_plugin;
+
 #endif // TEXTURE_H

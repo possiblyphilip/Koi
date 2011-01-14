@@ -1,18 +1,3 @@
-//typedef struct
-//{
-//	int checked;
-//	char *name;
-//	void (*func)(params stuff, void *gui_params);
-//	void *(*gui_func)(params stuff);
-//	gui_stuff more_stuff;
-//}
-//
-//
-//{
-//    {1, "my algo", alg_func, stuff},
-//
-//}
-
 /*
   Koi - a GIMP image authentication plugin
 	Copyright (C) 2010  ben howard
@@ -31,6 +16,12 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+
+
+//    cat /proc/cpuinfo | grep -i "core"
+//    cat /proc/cpuinfo | grep -i "core id" | tail -n 1 | awk '{ print $4 }'
+
+
 #include "Koi.h"
 
 #include "gui.c"
@@ -40,6 +31,13 @@
 
 #include "grain.h"
 #include "grain.c"
+
+
+#include "texture.h"
+#include "texture.c"
+
+#include "jpeg_compress.h"
+#include "jpeg_compress.c"
 
 
 MAIN()
@@ -211,21 +209,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 		height = y2 - start_row;
 		//maybe this will add an alpha channel to the original so that the others have one ...
 
-		image_id = gimp_drawable_get_image(drawable->drawable_id);
 
-		//all this is to make a copy of the bottom layer and stuffs it into another layer
-		//for processing so i dont mess up the original image
-		//get all the layers
-		layer_array = gimp_image_get_layers(image_id, &num_layers);
-		layer = gimp_image_get_active_layer(image_id);
-		if (layer == -1)
-		{
-			printf("failed to get active layer\n");
-			return;
-		}
-
-		//set the layer i want to the bottom most layer
-		layer = layer_array[num_layers-1];
 	}
 
 	if(width < 10 || height < 10)
@@ -248,7 +232,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
    * be merged at the end by the call to
    * gimp_drawable_merge_shadow() */
 	gimp_pixel_rgn_init (&rgn_in, drawable, start_colum, start_row, width, height, FALSE, FALSE);
-	gimp_pixel_rgn_init (&rgn_out, drawable,  start_colum, start_row, width, height, preview == NULL, TRUE);
+//	gimp_pixel_rgn_init (&rgn_out, drawable,  start_colum, start_row, width, height, preview == NULL, TRUE);
 
 
 
@@ -288,6 +272,26 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	{
 		if(plugin[jj]->checked)
 		{
+
+
+			gimp_pixel_rgn_init (&rgn_out, drawable,  start_colum, start_row, width, height, preview == NULL, TRUE);
+
+			image_id = gimp_drawable_get_image(drawable->drawable_id);
+
+			//all this is to make a copy of the bottom layer and stuffs it into another layer
+			//for processing so i dont mess up the original image
+			//get all the layers
+			layer_array = gimp_image_get_layers(image_id, &num_layers);
+			layer = gimp_image_get_active_layer(image_id);
+			if (layer == -1)
+			{
+				printf("failed to get active layer\n");
+				return;
+			}
+
+			//set the layer i want to the bottom most layer
+			layer = layer_array[num_layers-1];
+
 			//make a copy of the bottom most layer
 			new_layer = gimp_layer_copy(layer);
 
@@ -311,7 +315,8 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 				job[ii].start_row = 0;
 				job[ii].width = (width / NUM_THREADS);
 				job[ii].height = height;
-//				job[ii].options = plugin[jj]->options;
+				job[ii].image_id = image_id;
+				job[ii].drawable = drawable;
 				job[ii].thread = ii;
 
 
