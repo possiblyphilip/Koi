@@ -19,8 +19,10 @@
 #include "Koi.h"
 #include"jpeg_compress.h"
 
-gdouble jpeg_compress = .85;
+gfloat jpeg_compress = .85;
 int jpeg_threshold = 64;
+
+#define SLEEP_TIME 10
 
 
 void * jpeg_highlighter_algorithm(JOB_ARG *job)
@@ -29,6 +31,8 @@ void * jpeg_highlighter_algorithm(JOB_ARG *job)
 	int num_return_vals;
 	gchar file_name[] = "/tmp/koi_temp.jpg";
 	gint32 layer, temp_layer;
+
+	int ii;
 
 	printf("inside %s thread %d\n", jpeg_plugin.name, job->thread);
 
@@ -43,8 +47,17 @@ void * jpeg_highlighter_algorithm(JOB_ARG *job)
 		mkstemp(file_name);
 		printf("got filename %s\n", file_name);
 
+
+		printf("saving jpeg at %f compression\n", jpeg_compress);
 		gimp_run_procedure("file-jpeg-save",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, job->image_id , GIMP_PDB_DRAWABLE, job->drawable->drawable_id, GIMP_PDB_STRING, "/tmp/koi_temp.jpg", GIMP_PDB_STRING, "temp", GIMP_PDB_FLOAT, jpeg_compress, GIMP_PDB_FLOAT, 0.0, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_STRING,"created with Koi", GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 1, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 1, GIMP_PDB_END);
-		sleep(2);
+		printf("waiting for jpeg save\n");
+		gimp_progress_set_text("waiting for jpeg save\n");
+		for(ii = 0; ii < SLEEP_TIME; ii++)
+		{
+			job->progress = ((float)ii/SLEEP_TIME) * 4;
+			sleep(1);
+		}
+
 		printf("saved jpeg\n");
 //		sleep(1);
 		// reload our saved image and suck a layer off of it to subtract against or original image
@@ -90,24 +103,17 @@ void * jpeg_highlighter_algorithm(JOB_ARG *job)
 
 		gimp_threshold(job->drawable->drawable_id, jpeg_threshold,255 );
 		printf("threshold\n");
+
+		job->progress = 4;
+
 	}
 
 
 
-	job->progress = 1;
+	job->progress = 0;
 
 	return NULL;
 }
-
-///* Our usual callback function */
-//static void cb_radius_hscale( GtkAdjustment *adj,  gpointer   data )
-//{
-//	GUI_values *temp_vals;
-//	temp_vals = (GUI_values *)data;
-//
-//	temp_vals->radius = gtk_adjustment_get_value(adj);
-//
-//}
 
 /* Our usual callback function */
 static void cb_jpeg_compress_check_button( GtkWidget *widget,  gpointer   data )

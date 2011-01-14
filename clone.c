@@ -206,6 +206,7 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 	}
 
 
+	printf("starting  thread %d qsort\n", job->thread);
 
 	//sort array using qsort functions
 	qsort(block_metric_array, num_blocks, sizeof(CLONE_BLOCK_METRIC), clone_metric_comp);
@@ -221,6 +222,9 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 				job->array_out[from_col][from_row].blue = job->array_in[from_col][from_row].blue;
 			}
 		}
+
+
+	printf("matching in thread %d\n", job->thread);
 
 	//finding matches and writing them out to the output image
 	for(ii = 1; ii< num_blocks; ii++)
