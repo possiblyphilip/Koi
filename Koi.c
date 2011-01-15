@@ -315,10 +315,12 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 				job[ii].start_row = 0;
 				job[ii].width = (width / NUM_THREADS);
 				job[ii].height = height;
-				job[ii].image_id = image_id;
+				job[ii].image.height = height;
+				job[ii].image.width = width;
 				job[ii].drawable = drawable;
-				job[ii].thread = ii;
+				job[ii].image_id = image_id;
 
+				job[ii].thread = ii;
 
 				thread_return_value[ii] = pthread_create((pthread_t*) &thread_id[ii], NULL, (void *(*)(void *))plugin[jj]->algorithm, (void*)&job[ii]);
 				if (thread_return_value[ii] != 0)

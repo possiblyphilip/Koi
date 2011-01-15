@@ -21,14 +21,18 @@
 
 
 
+//
+//typedef struct
+//{
+//	int block_size;
+//}CLONE_PARAMS;
+//
+//static CLONE_PARAMS clone_params;
 
-typedef struct
-{
-	int block_size;
-}CLONE_PARAMS;
-
-static CLONE_PARAMS clone_params;
-
+int                 clone_condition_met = 0;
+pthread_cond_t      clone_cond  = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t     clone_mutex = PTHREAD_MUTEX_INITIALIZER;
+volatile int wait_var = 1;
 
 typedef struct
 {
@@ -55,6 +59,7 @@ HSL rgb_to_hsl( guchar r, guchar g, guchar b);
 int clone_metric_comp(const void *a, const void *b);
 
 gdouble clone_block_size = 16;
+CLONE_BLOCK_METRIC *block_metric_array;
 
 //#########################################################3
 
@@ -64,9 +69,9 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 	int block_size;
 
 	int block_row,block_col;
-	int counter = 0;
+	int job_blocks;
 	int temp = 0;
-	int from_row, to_row, from_col, to_col;
+	int from_row, from_col;
 	int num_blocks;
 	int ii;
 
@@ -83,28 +88,56 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 
 	block_size = clone_block_size;
 
-	CLONE_BLOCK_METRIC *block_metric_array;
-	CLONE_BLOCK_METRIC slider[block_size];
+
+
+
+	//i only need to have the memory malloced once so i just have thread zero do it
+	if(job->thread == 0)
+	{
 
 	//here i am creating my block metric array to store the metric that i am sorting each block by
-	num_blocks = job->height*job->width;
-	block_metric_array = (CLONE_BLOCK_METRIC*)malloc (num_blocks * sizeof(CLONE_BLOCK_METRIC));
+		num_blocks = job->image.height*job->image.width;
+		block_metric_array = (CLONE_BLOCK_METRIC*)malloc (num_blocks * sizeof(CLONE_BLOCK_METRIC));
 
-	//set them all to zero
-	for(ii = 0; ii < num_blocks; ii++)
+		//set them all to zero
+		for(ii = 0; ii < num_blocks; ii++)
+		{
+			block_metric_array[ii].h_metric = 0;
+			block_metric_array[ii].s_metric = 0;
+			block_metric_array[ii].l_metric = 0;
+			block_metric_array[ii].metric = 0;
+			block_metric_array[ii].col = 0;
+			block_metric_array[ii].row = 0;
+		}
+
+
+		printf("numb blocks = %d\n", num_blocks);
+
+		pthread_cond_broadcast(&clone_cond);
+		pthread_mutex_lock(&clone_mutex);
+		wait_var = 0;
+		pthread_mutex_unlock(&clone_mutex);
+
+	}
+	else
 	{
-		block_metric_array[ii].h_metric = 0;
-		block_metric_array[ii].s_metric = 0;
-		block_metric_array[ii].l_metric = 0;
-		block_metric_array[ii].metric = 0;
-		block_metric_array[ii].col = 0;
-		block_metric_array[ii].row = 0;
+		printf("thread %d waiting\n", job->thread);
+		while (wait_var)
+		{
+			pthread_mutex_lock(&clone_mutex);
+			if (wait_var) pthread_cond_wait(&clone_cond, &clone_mutex);
+		}
+		pthread_mutex_unlock(&clone_mutex);
+		printf("thread %d running\n", job->thread);
 	}
 
-	ii = 0;
 
 
 
+//this should put the counter at the right place for each thread so each thread works on filling up its little slice of the array
+	ii = job->image.height*job->image.width*(job->thread/(double)NUM_THREADS);
+
+	printf("thread %d index start = %d\n", job->thread, ii);
 
 	//this snipit should let the colums blend in the middle of the image without writing over the edge of the image
 	//basically this allows each thread to read the other threads data so there are not gaps between
@@ -205,11 +238,45 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 		job->progress = (double)from_row / (job->height * 2);
 	}
 
+	pthread_mutex_lock(&clone_mutex);
+	wait_var++;
+	pthread_mutex_unlock(&clone_mutex);
 
-	printf("starting  thread %d qsort\n", job->thread);
 
-	//sort array using qsort functions
-	qsort(block_metric_array, num_blocks, sizeof(CLONE_BLOCK_METRIC), clone_metric_comp);
+
+	if(job->thread == 0)
+	{
+		printf("starting  thread %d qsort\n", job->thread);
+		//sort array using qsort functions
+
+		//hang out and do nothign till all the threads are done
+		while(wait_var < NUM_THREADS)
+		{
+		}
+
+		qsort(block_metric_array, num_blocks, sizeof(CLONE_BLOCK_METRIC), clone_metric_comp);
+
+		printf("done with qsort\n");
+
+		pthread_cond_broadcast(&clone_cond);
+
+		pthread_mutex_lock(&clone_mutex);
+		wait_var = 0;
+		pthread_mutex_unlock(&clone_mutex);
+	}
+	else
+	{
+		printf("thread %d waiting\n", job->thread);
+		while (wait_var)
+		{
+			pthread_mutex_lock(&clone_mutex);
+			if (wait_var) pthread_cond_wait(&clone_cond, &clone_mutex);
+		}
+		pthread_mutex_unlock(&clone_mutex);
+		printf("thread %d running\n", job->thread);
+	}
+
+
 
 
 	//copying the original to my output so i can have the original image as my output image with the blocks written over it
@@ -226,8 +293,14 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 
 	printf("matching in thread %d\n", job->thread);
 
+	//this should put the counter at the right place for each thread so each thread works on filling up its little slice of the array
+	ii = job->image.height*job->image.width*(job->thread/(double)NUM_THREADS);
+	job_blocks = job->image.height*job->image.width*((job->thread+1)/(double)NUM_THREADS);
+
+	printf("thread %d index start = %d job blocks %d\n", job->thread, ii, job_blocks);
+
 	//finding matches and writing them out to the output image
-	for(ii = 1; ii< num_blocks; ii++)
+	for(; ii< job_blocks; ii++)
 	{
 		//this disallows any blocks that are totally white or black
 		if( block_metric_array[ii].metric != 0 &&  block_metric_array[ii].metric != 255*3*block_size*block_size)
@@ -279,6 +352,19 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 
 		job->progress = (double)ii / (num_blocks * 2) + .5;
 
+	}
+
+	pthread_mutex_lock(&clone_mutex);
+	wait_var++;
+	pthread_mutex_unlock(&clone_mutex);
+
+	if(job->thread == 0)
+	{
+		//hang out and do nothign till all the threads are done
+		while(wait_var < NUM_THREADS)
+		{
+		}
+		free(block_metric_array);
 	}
 
 	job->progress = 1;

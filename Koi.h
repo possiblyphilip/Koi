@@ -47,6 +47,13 @@ typedef struct
 	guchar blue;
 }PIXEL;
 
+
+typedef struct
+{
+	int height;
+	int width;
+}IMAGE;
+
 typedef struct
 {
 	PIXEL **array_in;
@@ -59,6 +66,7 @@ typedef struct
 	int width;
 	double progress;
 	int thread;
+	IMAGE image;
 	void *options;
 }JOB_ARG;
 
