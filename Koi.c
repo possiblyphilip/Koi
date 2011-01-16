@@ -410,6 +410,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 		gimp_drawable_preview_draw_region (GIMP_DRAWABLE_PREVIEW (preview),  &rgn_out);
 	}
 
+	printf("Koi done\n");
 
 	gimp_progress_end ();
 }

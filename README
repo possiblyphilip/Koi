@@ -22,17 +22,28 @@ Installing Koi on Ubuntu
 
 sudo apt-get install libgimp2.0-dev
 
+//extract Koi source into a directory 
+
+//while inside Koi source directory 
+
+//for local Koi install
 gimptool-2.0 --install Koi.c 
+
+OR 
+
+//for global Koi install
+sudo gimptool-2.0 --install-admin Koi.c
 
 OR
 
-sudo gimptool-2.0 --install-admin Koi.c
+//drop Koi.exe into /usr/lib/gimp/2.0/plug-ins/
+
 ##########################################
 Using Koi in Gimp
 
 Koi is located under Filters>Misc>Koi
 
-Koi will inspect the the selected image and produce layers highlighting modified regions. currently it is looking for smoothed regions in the image and highlighting them red. An algorithm to find and highlight clone tool use is under development.
+Koi will inspect the the selected image and produce layers highlighting modified regions.
 ##########################################
 
 current screenshots

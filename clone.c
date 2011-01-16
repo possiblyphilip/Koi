@@ -21,13 +21,7 @@
 
 
 
-//
-//typedef struct
-//{
-//	int block_size;
-//}CLONE_PARAMS;
-//
-//static CLONE_PARAMS clone_params;
+#define SEARCH_DEPTH 1
 
 int                 clone_condition_met = 0;
 pthread_cond_t      clone_cond  = PTHREAD_COND_INITIALIZER;
@@ -58,7 +52,7 @@ HSL rgb_to_hsl( guchar r, guchar g, guchar b);
 
 int clone_metric_comp(const void *a, const void *b);
 
-gdouble clone_block_size = 16;
+gint clone_block_size = 16;
 CLONE_BLOCK_METRIC *block_metric_array;
 
 //#########################################################3
@@ -69,6 +63,7 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 	int block_size;
 
 	int block_row,block_col;
+	int max_job_block;
 	int job_blocks;
 	int temp = 0;
 	int from_row, from_col;
@@ -76,6 +71,7 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 	int ii;
 
 	int min, max;
+	int offset;
 
 	int max_col;
 
@@ -115,6 +111,7 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 
 		pthread_cond_broadcast(&clone_cond);
 		pthread_mutex_lock(&clone_mutex);
+		printf("got lock\n");
 		wait_var = 0;
 		pthread_mutex_unlock(&clone_mutex);
 
@@ -122,10 +119,10 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 	else
 	{
 		printf("thread %d waiting\n", job->thread);
+		pthread_mutex_lock(&clone_mutex);
 		while (wait_var)
 		{
-			pthread_mutex_lock(&clone_mutex);
-			if (wait_var) pthread_cond_wait(&clone_cond, &clone_mutex);
+			pthread_cond_wait(&clone_cond, &clone_mutex);
 		}
 		pthread_mutex_unlock(&clone_mutex);
 		printf("thread %d running\n", job->thread);
@@ -246,14 +243,15 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 
 	if(job->thread == 0)
 	{
-		printf("starting  thread %d qsort\n", job->thread);
-		//sort array using qsort functions
+
+
 
 		//hang out and do nothign till all the threads are done
 		while(wait_var < NUM_THREADS)
 		{
 		}
-
+				//sort array using qsort functions
+		printf("starting  thread %d qsort\n", job->thread);
 		qsort(block_metric_array, num_blocks, sizeof(CLONE_BLOCK_METRIC), clone_metric_comp);
 
 		printf("done with qsort\n");
@@ -267,10 +265,10 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 	else
 	{
 		printf("thread %d waiting\n", job->thread);
+		pthread_mutex_lock(&clone_mutex);
 		while (wait_var)
 		{
-			pthread_mutex_lock(&clone_mutex);
-			if (wait_var) pthread_cond_wait(&clone_cond, &clone_mutex);
+			pthread_cond_wait(&clone_cond, &clone_mutex);
 		}
 		pthread_mutex_unlock(&clone_mutex);
 		printf("thread %d running\n", job->thread);
@@ -295,62 +293,70 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 
 	//this should put the counter at the right place for each thread so each thread works on filling up its little slice of the array
 	ii = job->image.height*job->image.width*(job->thread/(double)NUM_THREADS);
-	job_blocks = job->image.height*job->image.width*((job->thread+1)/(double)NUM_THREADS);
 
-	printf("thread %d index start = %d job blocks %d\n", job->thread, ii, job_blocks);
+	max_job_block = job->image.height*job->image.width*((job->thread+1)/(double)NUM_THREADS);
+	job_blocks = max_job_block - ii;
+
+	printf("thread %d index start = %d job blocks %d\n", job->thread, ii, max_job_block);
+
+
+	ii+=SEARCH_DEPTH;
 
 	//finding matches and writing them out to the output image
-	for(; ii< job_blocks; ii++)
+	for(; ii< max_job_block; ii++)
 	{
 		//this disallows any blocks that are totally white or black
 		if( block_metric_array[ii].metric != 0 &&  block_metric_array[ii].metric != 255*3*block_size*block_size)
 		{
-			//this checks to see if two blocks have the same metric
-			if(block_metric_array[ii].metric == block_metric_array[ii-1].metric)
-				//	    if( abs(block_metric_array[ii].metric - block_metric_array[ii-1].metric) < block_size*10)
+			for(offset = 1; offset <= SEARCH_DEPTH; offset++)
 			{
-				//dissalows blocks from matching if they are too close
-				if(abs(block_metric_array[ii].col-block_metric_array[ii-1].col) > block_size || abs(block_metric_array[ii].row-block_metric_array[ii-1].row) > block_size)
+				//this checks to see if two blocks have the same metric
+					if(block_metric_array[ii].metric == block_metric_array[ii-offset].metric)
+				//if( abs(block_metric_array[ii].metric - block_metric_array[ii-offset].metric) < block_size*1)
 				{
-
-					temp = 0;
-					//subtracts the two blocks to see if they go to zero (perfect match)
-					for (block_row = 0; block_row < block_size ; block_row++)
+					//dissalows blocks from matching if they are too close
+					if(abs(block_metric_array[ii].col-block_metric_array[ii-offset].col) > block_size*2 || abs(block_metric_array[ii].row-block_metric_array[ii-offset].row) > block_size*2)
 					{
-						for (block_col = 0; block_col < block_size; block_col++)
-						{
 
-							temp += abs(job->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].green - job->array_in[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row].green);
-
-						}
-					}
-					//if the block matches close enough i let it through
-					if(temp <= block_size*10)
-					{
-						//highlighting the blocks that match
+						temp = 0;
+						//subtracts the two blocks to see if they go to zero (perfect match)
 						for (block_row = 0; block_row < block_size ; block_row++)
 						{
 							for (block_col = 0; block_col < block_size; block_col++)
 							{
 
-								job->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].red = 50;
-								job->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].green = 190;
-								job->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].blue = 170;
-
-								job->array_out[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row].red = 255;
-								job->array_out[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row].green = 115;
-								job->array_out[ block_metric_array[ii-1].col+block_col][block_metric_array[ii-1].row+block_row].blue = 0;
+								temp += abs(job->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].green - job->array_in[ block_metric_array[ii-offset].col+block_col][block_metric_array[ii-offset].row+block_row].green);
 
 							}
 						}
+						//if the block matches close enough i let it through
+						if(temp <= block_size*block_size)
+						{
+							//highlighting the blocks that match
+							for (block_row = 0; block_row < block_size ; block_row++)
+							{
+								for (block_col = 0; block_col < block_size; block_col++)
+								{
+
+									job->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].red = 50;
+									job->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].green = 190;
+									job->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].blue = 170;
+
+									job->array_out[ block_metric_array[ii-offset].col+block_col][block_metric_array[ii-offset].row+block_row].red = 255;
+									job->array_out[ block_metric_array[ii-offset].col+block_col][block_metric_array[ii-offset].row+block_row].green = 115;
+									job->array_out[ block_metric_array[ii-offset].col+block_col][block_metric_array[ii-offset].row+block_row].blue = 0;
+
+								}
+							}
+						}
+
 					}
 
 				}
-
 			}
 		}
 
-		job->progress = (double)ii / (num_blocks * 2) + .5;
+		job->progress = ((ii+job_blocks)-max_job_block)/ (double)(job_blocks*2) + .5;
 
 	}
 
@@ -401,19 +407,19 @@ HSL rgb_to_hsl( guchar r, guchar g, guchar b)
 
 	if((r_percent >= g_percent) && (r_percent >= b_percent))
 	{
-	max_color = r_percent;
+		max_color = r_percent;
 	}
 
 	if((g_percent >= r_percent) && (g_percent >= b_percent))
 
 	{
-	max_color = g_percent;
+		max_color = g_percent;
 	}
 
 	if((b_percent >= r_percent) && (b_percent >= g_percent))
 	{
 
-	max_color = b_percent;
+		max_color = b_percent;
 	}
 
 	if((r_percent <= g_percent) && (r_percent <= b_percent))
