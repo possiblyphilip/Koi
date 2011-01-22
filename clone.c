@@ -26,7 +26,7 @@
 int                 clone_condition_met = 0;
 pthread_cond_t      clone_cond  = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t     clone_mutex = PTHREAD_MUTEX_INITIALIZER;
-volatile int wait_var = 1;
+volatile int clone_wait_var = 1;
 
 typedef struct
 {
@@ -112,7 +112,7 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 		pthread_cond_broadcast(&clone_cond);
 		pthread_mutex_lock(&clone_mutex);
 		printf("got lock\n");
-		wait_var = 0;
+		clone_wait_var = 0;
 		pthread_mutex_unlock(&clone_mutex);
 
 	}
@@ -120,7 +120,7 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 	{
 		printf("thread %d waiting\n", job->thread);
 		pthread_mutex_lock(&clone_mutex);
-		while (wait_var)
+		while (clone_wait_var)
 		{
 			pthread_cond_wait(&clone_cond, &clone_mutex);
 		}
@@ -236,7 +236,7 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 	}
 
 	pthread_mutex_lock(&clone_mutex);
-	wait_var++;
+	clone_wait_var++;
 	pthread_mutex_unlock(&clone_mutex);
 
 
@@ -247,7 +247,7 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 
 
 		//hang out and do nothign till all the threads are done
-		while(wait_var < NUM_THREADS)
+		while(clone_wait_var < NUM_THREADS)
 		{
 		}
 				//sort array using qsort functions
@@ -259,14 +259,14 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 		pthread_cond_broadcast(&clone_cond);
 
 		pthread_mutex_lock(&clone_mutex);
-		wait_var = 0;
+		clone_wait_var = 0;
 		pthread_mutex_unlock(&clone_mutex);
 	}
 	else
 	{
 		printf("thread %d waiting\n", job->thread);
 		pthread_mutex_lock(&clone_mutex);
-		while (wait_var)
+		while (clone_wait_var)
 		{
 			pthread_cond_wait(&clone_cond, &clone_mutex);
 		}
@@ -277,16 +277,71 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 
 
 
-	//copying the original to my output so i can have the original image as my output image with the blocks written over it
-		for (from_row = 0; from_row < job->height-block_size; from_row++)
-		{
-			for (from_col = job->start_colum; from_col < max_col; from_col++)
-			{
-				job->array_out[from_col][from_row].red = job->array_in[from_col][from_row].red;
-				job->array_out[from_col][from_row].green = job->array_in[from_col][from_row].green;
-				job->array_out[from_col][from_row].blue = job->array_in[from_col][from_row].blue;
-			}
-		}
+//	//copying the original to my output so i can have the original image as my output image with the blocks written over it
+//		for (from_row = 0; from_row < job->height; from_row++)
+//		{
+//			for (from_col = job->start_colum; from_col < max_col; from_col++)
+//			{
+//				job->array_out[from_col][from_row].red = job->array_in[from_col][from_row].red;
+//				job->array_out[from_col][from_row].green = job->array_in[from_col][from_row].green;
+//				job->array_out[from_col][from_row].blue = job->array_in[from_col][from_row].blue;
+//			}
+//		}
+
+//	//edge find the image
+//		for (from_row = 0; from_row < job->height ; from_row++)
+//		{
+//			for (from_col = job->start_colum+1; from_col < job->start_colum+job->width; from_col++)
+//			{
+//				job->array_in[from_col][from_row].red = abs(job->array_out[from_col][from_row].red - job->array_out[from_col-1][from_row].red);
+//			}
+//		}
+//
+////		threshold the image by blocks
+//		for (from_row = 0; from_row < job->height-block_size ; from_row+=block_size)
+//		{
+//			for (from_col = job->start_colum; from_col < max_col; from_col+=block_size)
+//			{
+//				temp = 0;
+//				//loop through the block
+//				for (block_row = 0; block_row < block_size; block_row++)
+//				{
+//					for (block_col = 0; block_col < block_size; block_col++)
+//					{
+//
+//
+//						temp += job->array_in[from_col+block_col][from_row+block_row].red;
+//					}
+//				}
+////if its got enough texture ill write it white
+//				if(temp >= block_size*block_size)
+//				{
+//					for (block_row = 0; block_row < block_size; block_row++)
+//					{
+//						for (block_col = 0; block_col < block_size; block_col++)
+//						{
+//							job->array_in[from_col+block_col][from_row+block_row].red = 255;
+//						}
+//					}
+//
+//				}
+////if not enough texture ill write it black
+//				else
+//				{
+//					for (block_row = 0; block_row < block_size; block_row++)
+//					{
+//						for (block_col = 0; block_col < block_size; block_col++)
+//						{
+//							job->array_in[from_col+block_col][from_row+block_row].red = 0;
+//						}
+//					}
+//				}
+//			}
+//		}
+
+
+
+
 
 
 	printf("matching in thread %d\n", job->thread);
@@ -306,13 +361,13 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 	for(; ii< max_job_block; ii++)
 	{
 		//this disallows any blocks that are totally white or black
-		if( block_metric_array[ii].metric != 0 &&  block_metric_array[ii].metric != 255*3*block_size*block_size)
+		if( block_metric_array[ii].metric > (block_size) &&  block_metric_array[ii].metric < ((255*3*block_size*block_size)-(block_size*block_size)))
 		{
 			for(offset = 1; offset <= SEARCH_DEPTH; offset++)
 			{
 				//this checks to see if two blocks have the same metric
-					if(block_metric_array[ii].metric == block_metric_array[ii-offset].metric)
-				//if( abs(block_metric_array[ii].metric - block_metric_array[ii-offset].metric) < block_size*1)
+				if(block_metric_array[ii].metric == block_metric_array[ii-offset].metric)
+				//if( abs(block_metric_array[ii].metric - block_metric_array[ii-offset].metric) < block_size*block_size)
 				{
 					//dissalows blocks from matching if they are too close
 					if(abs(block_metric_array[ii].col-block_metric_array[ii-offset].col) > block_size*2 || abs(block_metric_array[ii].row-block_metric_array[ii-offset].row) > block_size*2)
@@ -338,13 +393,21 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 								for (block_col = 0; block_col < block_size; block_col++)
 								{
 
-									job->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].red = 50;
-									job->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].green = 190;
-									job->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].blue = 170;
+//									job->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].red = 50;
+//									job->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].green = 190;
+//									job->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].blue = 170;
+//
+//									job->array_out[ block_metric_array[ii-offset].col+block_col][block_metric_array[ii-offset].row+block_row].red = 255;
+//									job->array_out[ block_metric_array[ii-offset].col+block_col][block_metric_array[ii-offset].row+block_row].green = 115;
+//									job->array_out[ block_metric_array[ii-offset].col+block_col][block_metric_array[ii-offset].row+block_row].blue = 0;
 
-									job->array_out[ block_metric_array[ii-offset].col+block_col][block_metric_array[ii-offset].row+block_row].red = 255;
-									job->array_out[ block_metric_array[ii-offset].col+block_col][block_metric_array[ii-offset].row+block_row].green = 115;
-									job->array_out[ block_metric_array[ii-offset].col+block_col][block_metric_array[ii-offset].row+block_row].blue = 0;
+									job->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].red = job->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].red;
+									job->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].green = job->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].green;
+									job->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].blue =job->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].blue;
+
+									job->array_out[ block_metric_array[ii-offset].col+block_col][block_metric_array[ii-offset].row+block_row].red = job->array_in[ block_metric_array[ii-offset].col+block_col][block_metric_array[ii-offset].row+block_row].red;
+									job->array_out[ block_metric_array[ii-offset].col+block_col][block_metric_array[ii-offset].row+block_row].green = job->array_in[ block_metric_array[ii-offset].col+block_col][block_metric_array[ii-offset].row+block_row].green;
+									job->array_out[ block_metric_array[ii-offset].col+block_col][block_metric_array[ii-offset].row+block_row].blue = job->array_in[ block_metric_array[ii-offset].col+block_col][block_metric_array[ii-offset].row+block_row].blue;
 
 								}
 							}
@@ -360,14 +423,31 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 
 	}
 
+
+	//wipe out any cloneing found in non textured areas
+
+	for (from_row = 0; from_row < job->height; from_row++)
+	{
+		for (from_col = job->start_colum; from_col < max_col; from_col++)
+		{
+			if(job->array_in[from_col][from_row].red == 0)
+			{
+				job->array_out[from_col][from_row].red = 0;
+				job->array_out[from_col][from_row].green = 0;
+				job->array_out[from_col][from_row].blue = 0;
+			}
+		}
+	}
+
+
 	pthread_mutex_lock(&clone_mutex);
-	wait_var++;
+	clone_wait_var++;
 	pthread_mutex_unlock(&clone_mutex);
 
 	if(job->thread == 0)
 	{
 		//hang out and do nothign till all the threads are done
-		while(wait_var < NUM_THREADS)
+		while(clone_wait_var < NUM_THREADS)
 		{
 		}
 		free(block_metric_array);

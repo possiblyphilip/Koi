@@ -19,7 +19,7 @@
 
 
 //    cat /proc/cpuinfo | grep -i "core"
-//    cat /proc/cpuinfo | grep -i "core id" | tail -n 1 | awk '{ print $4 }'
+//    cat /proc/cpuinfo | grep -i "cpu cores" | tail -n 1 | awk '{ print $4 }'
 
 
 #include "Koi.h"
@@ -174,6 +174,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
 	guchar pixel[4];
 
+	PIXEL **hidden_array;
 	PIXEL **in_array;
 	PIXEL **out_array;
 
@@ -223,6 +224,8 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
 	printf("building pixel arrays\n");
 	//make an array to hold all the pixels
+
+	allocate_pixel_array(&hidden_array,width, height);
 	allocate_pixel_array(&in_array,width, height);
 	allocate_pixel_array(&out_array,width, height);
 
@@ -249,9 +252,9 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 		{
 			gimp_pixel_rgn_get_pixel (&rgn_in, pixel, start_colum+col,start_row+row);
 
-			in_array[col][row].red = pixel[0];
-			in_array[col][row].green = pixel[1];
-			in_array[col][row].blue = pixel[2];
+			hidden_array[col][row].red = pixel[0];
+			hidden_array[col][row].green = pixel[1];
+			hidden_array[col][row].blue = pixel[2];
 		}
 
 		if (row % 50 == 0)
@@ -259,6 +262,8 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 			gimp_progress_update ((gdouble) row / height);
 		}
 	}
+
+
 
 
 
@@ -272,6 +277,30 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	{
 		if(plugin[jj]->checked)
 		{
+
+			printf("copying Koi array\n");
+			gimp_progress_set_text("copying Koi array\n");
+
+			//copying the original to my output so i can have the original image as my output image with the blocks written over it
+				for (row = 0; row < height; row++)
+				{
+					for (col = 0; col < width; col++)
+					{
+						in_array[col][row].red = hidden_array[col][row].red;
+						in_array[col][row].green = hidden_array[col][row].green;
+						in_array[col][row].blue = hidden_array[col][row].blue;
+					}
+				}
+
+				for (row = 0; row < height; row++)
+				{
+					for (col = 0; col < width; col++)
+					{
+						out_array[col][row].red = 0;
+						out_array[col][row].green = 0;
+						out_array[col][row].blue = 0;
+					}
+				}
 
 
 			gimp_pixel_rgn_init (&rgn_out, drawable,  start_colum, start_row, width, height, preview == NULL, TRUE);
@@ -292,8 +321,12 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 			//set the layer i want to the bottom most layer
 			layer = layer_array[num_layers-1];
 
-			//make a copy of the bottom most layer
+			//make a copy of the bottom most layer									
 			new_layer = gimp_layer_copy(layer);
+
+//			new_layer = gimp_layer_new (image_id, plugin[jj]->name,width, height,GIMP_RGB_IMAGE,100.0,GIMP_NORMAL_MODE);
+
+//			new_layer = gimp_layer_new_from_visible(image_id,image_id,plugin[jj]->name);
 
 			//Add the new layer to this image as the top layer
 			if (gimp_image_add_layer(image_id, new_layer, 0) != TRUE)
@@ -304,7 +337,10 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 			//set the drawable to the top layer that we created for processing in
 			drawable->drawable_id = gimp_image_get_active_drawable(image_id);
 
+			gimp_drawable_set_name (drawable->drawable_id, plugin[jj]->name);
+
 			printf("running %s\n",plugin[jj]->name);
+			gimp_progress_set_text("running\n");
 
 			//so i kick off a few threads for each algorithm
 			for(ii = 0; ii < NUM_THREADS; ii++)
@@ -321,6 +357,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 				job[ii].image_id = image_id;
 
 				job[ii].thread = ii;
+				job[ii].progress = 0;
 
 				thread_return_value[ii] = pthread_create((pthread_t*) &thread_id[ii], NULL, (void *(*)(void *))plugin[jj]->algorithm, (void*)&job[ii]);
 				if (thread_return_value[ii] != 0)
@@ -401,6 +438,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	}
 
 	printf("freeing pixel arrays\n");
+	free_pixel_array(hidden_array,width);
 	free_pixel_array(in_array,width);
 	free_pixel_array(out_array,width);
 

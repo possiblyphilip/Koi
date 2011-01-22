@@ -21,8 +21,80 @@
 
 int grain_radius = 16;
 
+pthread_cond_t      grain_cond  = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t     grain_mutex = PTHREAD_MUTEX_INITIALIZER;
+volatile int grain_wait_var = 1;
+
+
+void laplace(JOB_ARG *job)
+{
+
+	int offset_col, offset_row;
+	int SUM;
+	int	MASK[5][5];
+	int row, col;
+	int temp;
+	int max_col;
+
+	/* 5x5 Laplace mask.  Ref: Myler Handbook p. 135 */
+	MASK[0][0] = -1; MASK[0][1] = -1; MASK[0][2] = -1; MASK[0][3] = -1; MASK[0][4] = -1;
+	MASK[1][0] = -1; MASK[1][1] = -1; MASK[1][2] = -1; MASK[1][3] = -1; MASK[1][4] = -1;
+	MASK[2][0] = -1; MASK[2][1] = -1; MASK[2][2] = 24; MASK[2][3] = -1; MASK[2][4] = -1;
+	MASK[3][0] = -1; MASK[3][1] = -1; MASK[3][2] = -1; MASK[3][3] = -1; MASK[3][4] = -1;
+	MASK[4][0] = -1; MASK[4][1] = -1; MASK[4][2] = -1; MASK[4][3] = -1; MASK[4][4] = -1;
+
+	if(job->start_colum+job->width+5 < job->width*NUM_THREADS)
+	{
+		max_col = job->start_colum+job->width+5;
+
+	}
+	else
+	{
+		max_col = (job->width*NUM_THREADS)-5;
+	}
+
+	for(row = 0; row < job->height-5; row++)
+	{
+		for(col = job->start_colum; col < max_col; col++)
+		{
+			SUM = 0;
+
+			for(offset_row=0; offset_row < 5; offset_row++)
+			{
+				for(offset_col=0; offset_col < 5; offset_col++)
+				{
+					temp = 0;
+
+					temp += job->array_in[col+offset_col][row+offset_row].red;
+					temp += job->array_in[col+offset_col][row+offset_row].green;
+					temp += job->array_in[col+offset_col][row+offset_row].blue;
+
+					temp /= 3;
+
+					SUM += temp * MASK[offset_col][offset_row];
+
+				}
+			}
+
+			SUM = abs(SUM);
+
+			if(SUM>255)
+			{
+				SUM=255;
+			}
+
+
+			job->array_out[col][row].red = SUM;
+			job->array_out[col][row].green = SUM;
+			job->array_out[col][row].blue = SUM;
+		}
+	}
+}
+
 void * grain_highlighter_algorithm(JOB_ARG *job)
 {
+	GimpRunMode mode = GIMP_RUN_NONINTERACTIVE;
+	GimpPixelRgn rgn_in;
 
     int radius;
 
@@ -34,39 +106,51 @@ void * grain_highlighter_algorithm(JOB_ARG *job)
 
     int ii;
     int counter = 0;
-	//  guchar temp;
-    int row, col, temp;
+	double temp;
+	int row, col;
     int row_offset;
     int col_offset;
 
-    int max_col;
-    int min_col;
+	int max_col, min_col;
+	int num_return_vals;
 
+	//PIXEL pixel;
+	guchar pixel[4];
 
 	printf("inside %s thread %d\n", grain_plugin.name, job->thread);
 
+	laplace(job);
+
+	//copying the output of the laplace job to my input
+			for (row = 0; row < job->height; row++)
+			{
+				for (col = job->start_colum; col < job->start_colum+job->width; col++)
+				{
+					job->array_in[col][row].red = job->array_out[col][row].red;
+					job->array_in[col][row].green = job->array_out[col][row].green;
+					job->array_in[col][row].blue = job->array_out[col][row].blue;
+				}
+			}
 
 
 	radius = grain_radius;
 
-	printf("radius = %d\n", radius);
+			//    //this snipit should let the colums blend in the middle of the image without writing over the edge of the image
+				if(job->start_colum+job->width+radius < job->width*NUM_THREADS)
+				{
+					max_col = job->start_colum+job->width;
 
-    //this snipit should let the colums blend in the middle of the image without writing over the edge of the image
-	if(job->start_colum+job->width+radius < job->width*NUM_THREADS)
-	{
-		max_col = job->start_colum+job->width;
-
-	}
-	else
-	{
-		max_col = (job->width*NUM_THREADS) - radius;
-	}
+				}
+				else
+				{
+					max_col = (job->width*NUM_THREADS) - radius;
+				}
 
 
 	//if im at the left wall i need to start over at least one radius so i dont run off the page
 	if(job->start_colum == 0)
 	{
-	    min_col = radius;
+		min_col = radius;
 
 	}
 	else
@@ -74,21 +158,24 @@ void * grain_highlighter_algorithm(JOB_ARG *job)
 		min_col = job->start_colum;
 	}
 
-    //set my image to black
+	//set my image to black
 
 	for (row = 0; row < job->height; row++)
-    {
+	{
 		for (col = job->start_colum; col < job->start_colum+job->width; col++)
 		{
+			job->array_in[col][row].red = job->array_out[col][row].red;
 			job->array_out[col][row].red = 0;
+	//		job->array_in[col][row].green = job->array_out[col][row].green;
 			job->array_out[col][row].green = 0;
+	//		job->array_in[col][row].blue = job->array_out[col][row].blue;
 			job->array_out[col][row].blue = 0;
 		}
-    }
+	}
 
 
 	for (row = radius; row < job->height-radius ; row+=radius/4)
-    {
+	{
 		for (col = min_col; col < max_col; col+=radius/4)
 		{
 			highest = 0;
@@ -131,11 +218,11 @@ void * grain_highlighter_algorithm(JOB_ARG *job)
 
 			if(best_angle > 3.14)
 			{
-				best_angle-=3.14;
+				best_angle -= 3.14;
 			}
 
 
-			if(highest > 0)
+			if(highest/radius > 100)
 			{
 				for(ii = 0; ii < radius; ii++)
 				{
@@ -158,22 +245,12 @@ void * grain_highlighter_algorithm(JOB_ARG *job)
 
 		job->progress = (double)row / job->height;
 
-    }
+	}
 
 	job->progress = 1;
 
     return NULL;
 }
-
-///* Our usual callback function */
-//static void cb_radius_hscale( GtkAdjustment *adj,  gpointer   data )
-//{
-//	GUI_values *temp_vals;
-//	temp_vals = (GUI_values *)data;
-//
-//	temp_vals->radius = gtk_adjustment_get_value(adj);
-//
-//}
 
 /* Our usual callback function */
 static void cb_grain_check_button( GtkWidget *widget,  gpointer   data )
@@ -248,3 +325,57 @@ void create_grain_plugin()
 	printf("grain plugin created\n");
 
 }
+
+
+//	if(job->thread == 0)
+//	{
+//
+//				printf("making new pixel region\n");
+//		gimp_pixel_rgn_init (&rgn_in, job->drawable, job->start_colum, 0,job->width, job->height, FALSE, FALSE);
+//		sleep(3);
+//		printf("making image gray scale\n");
+//		gimp_run_procedure("gimp-desaturate",&num_return_vals, GIMP_PDB_DRAWABLE, job->drawable->drawable_id, GIMP_PDB_END);
+//		sleep(3);
+//		printf("edge finding\n");
+//		gimp_run_procedure("plug-in-edge",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, job->drawable->drawable_id, GIMP_PDB_FLOAT, 9.99, GIMP_PDB_INT32, 2, GIMP_PDB_INT32, 5, GIMP_PDB_END);
+//		printf("done edge finding\n");
+//		sleep(3);
+//
+//		//dump the gimp image data back into my own array for processing
+//		printf("filling Koi array\n");
+//		gimp_progress_set_text("filling Koi array\n");
+//
+//		for (row = 0; row < job->image.height; row++)
+//		{
+//			for (col = 0; col < job->image.width; col++)
+//			{
+//				gimp_pixel_rgn_get_pixel (&rgn_in, pixel, col,row);
+//
+//				job->array_in[col][row].red = pixel[0];
+//				job->array_in[col][row].green = pixel[1];
+//				job->array_in[col][row].blue = pixel[2];
+//			}
+//
+//			if (row % 50 == 0)
+//			{
+//				gimp_progress_update ((gdouble) row / job->image.height);
+//			}
+//		}
+//
+//		pthread_cond_broadcast(&grain_cond);
+//		pthread_mutex_lock(&grain_mutex);
+//		printf("got lock\n");
+//		grain_wait_var = 0;
+//		pthread_mutex_unlock(&grain_mutex);
+//	}
+//	else
+//	{
+//		printf("thread %d waiting\n", job->thread);
+//		pthread_mutex_lock(&grain_mutex);
+//		while (grain_wait_var)
+//		{
+//			pthread_cond_wait(&grain_cond, &grain_mutex);
+//		}
+//		pthread_mutex_unlock(&grain_mutex);
+//		printf("thread %d running\n", job->thread);
+//	}

@@ -18,178 +18,108 @@
 
 #include"texture.h"
 
-int texture_threshold = 110;
+gfloat texture_threshold = 25;
 
 void * texture_highlighter_algorithm(JOB_ARG *job)
 {
 
-    int size = 20;
+	int block_size = 16;
 
     guchar slider[20];
     int ii;
     int counter = 0;
-    guchar temp;
-    int row, col, channel;
+	int temp;
+	int row, col, block_row,block_col;
+	int max_col;
 
 	printf("inside %s thread %d\n", texture_plugin.name, job->thread);
 
-	printf("texture threshold = %d\n", texture_threshold);
+	printf("texture threshold = %f\n", texture_threshold);
 
 
     //get the argument passed in, and set our local variables
 //	JOB_ARG* job = (JOB_ARG*)pArg;
 
-	//set my slider to zero
-    for(ii = 0; ii < size; ii++)
-    {
-		slider[ii] = 0;
-    }
+//	//set my slider to zero
+//    for(ii = 0; ii < size; ii++)
+//    {
+//		slider[ii] = 0;
+//    }
 
+	//this snipit should let the colums blend in the middle of the image without writing over the edge of the image
+	//basically this allows each thread to read the other threads data so there are not gaps between
+	//the work each thread does
+	if(job->start_colum+job->width+block_size < job->width* NUM_THREADS)
+	{
+		max_col = job->start_colum+job->width;
+	}
+	else
+	{
+		max_col = (job->width*NUM_THREADS) - block_size;
+	}
 
-// need to do a lot of pre processing on this one
+	//edge find the image
+		laplace(job);
 
+		//copying the output of the laplace job to my input
+//				for (row = 0; row < job->height; row++)
+//				{
+//					for (col = job->start_colum; col < job->start_colum+job->width; col++)
+//					{
+//						job->array_in[col][row].red = job->array_out[col][row].red;
+//						job->array_in[col][row].green = job->array_out[col][row].green;
+//						job->array_in[col][row].blue = job->array_out[col][row].blue;
+//					}
+//				}
 
-
-	for (row = 0; row < job->height ; row++)
-    {
-		for (col = job->start_colum; col < job->start_colum+job->width; col++)
+//		threshold the image by blocks
+		for (row = 0; row < job->height-block_size ; row+=block_size)
 		{
-			//set the current element in the slider to our newest pixel value
-			slider[counter] = job->array_in[col][row].red;
-			temp = 0;
-			//look through the slider to see if we have any bright spots
-			for(ii = 0; ii < size; ii++)
+			for (col = job->start_colum; col < max_col; col+=block_size)
 			{
-				if(slider[ii] > temp)
+				temp = 0;
+				//loop through the block
+				for (block_row = 0; block_row < block_size; block_row++)
 				{
-					temp = slider[ii];
-				}
-			}
-			//		    temp =+ slider[ii];
-			//
-			//	    }
-			//
-			//	    temp /= size;
-
-			//set the color to red because its been messed with
-			if(temp < texture_threshold)
-			{
-				if(job->array_out[col][row].red == 255 && job->array_out[col][row].green == 255 && job->array_out[col][row].blue == 255)
-				{
-					//pixels are all white and info is gone
-					job->array_out[col][row].red = 110;
-					job->array_out[col][row].green = 255;
-					job->array_out[col][row].blue = 90;
-
-
-				}
-
-				else
-				{
-					if(job->array_out[col][row].red == 0 && job->array_out[col][row].green == 0 && job->array_out[col][row].blue == 0)
+					for (block_col = 0; block_col < block_size; block_col++)
 					{
-						//pixels are all black and info is gone
-						job->array_out[col][row].red = 30;
-						job->array_out[col][row].green = 75;
-						job->array_out[col][row].blue = 30;
-					}
-					else
-					{
-						job->array_out[col][row].red = 255;
-						job->array_out[col][row].green = 0;
-						job->array_out[col][row].blue = 0;
-						//			job->array_out[col][row].red = temp;
-						//			job->array_out[col][row].green = temp;
-						//			job->array_out[col][row].blue = temp;
 
+
+						temp += job->array_out[col+block_col][row+block_row].red;
 					}
 				}
-			}
-			//pixels are good
-			else
-			{
-				job->array_out[col][row].red = 80;
-				job->array_out[col][row].green = 190;
-				job->array_out[col][row].blue = 70;
-
-			}
-
-			//this will reset my slider counter so i dont have to make a queue or anything slow like that
-			counter++;
-			counter%=size;
-
-		}
-
-		job->progress = (double)row / (job->height * 2);
-
-    }
-
-    //###################
-	// now do the same image block virtically
-	//set my slider to zero
-    for(ii = 0; ii < size; ii++)
-    {
-		slider[ii] = 0;
-    }
-
-
-	for (col = job->start_colum; col < job->start_colum+job->width; col++)
-    {
-		for (row = 0; row < job->height ; row++)
-		{
-
-			//set the current element in the slider to our newest pixel value
-			slider[counter] = job->array_in[col][row].red;
-			temp = 0;
-			//look through the slider to see if we have any bright spots
-			for(ii = 0; ii < size; ii++)
-			{
-				if(slider[ii] > temp)
+//if its got too little texture ill write it out to the output image
+				if(temp <= block_size*block_size*texture_threshold)
 				{
-					temp = slider[ii];
+					for (block_row = 0; block_row < block_size; block_row++)
+					{
+						for (block_col = 0; block_col < block_size; block_col++)
+						{
+							job->array_out[col+block_col][row+block_row].red = job->array_in[col+block_col][row+block_row].red;
+							job->array_out[col+block_col][row+block_row].green = job->array_in[col+block_col][row+block_row].green;
+							job->array_out[col+block_col][row+block_row].blue = job->array_in[col+block_col][row+block_row].blue;
+						}
+					}
+
 				}
-			}
-			//		temp =+ slider[ii];
-			//
-			//	}
-			//
-			//	temp /= size;
-			//set the color to red because its been messed with
-			if(temp < texture_threshold)
-			{
-				//if the pixel is already green we dont want to set it to red, we will set it to grey instead
-				if(job->array_out[col][row].green == 75 || job->array_out[col][row].green == 255  || job->array_out[col][row].green == 190 )
-				{
-					job->array_out[col][row].red = 80;
-					job->array_out[col][row].green = 190;
-					job->array_out[col][row].blue = 70;
-				}
+//if its got enough texture ill black it out
 				else
 				{
-					job->array_out[col][row].red = 255;
-					job->array_out[col][row].green = 0;
-					job->array_out[col][row].blue = 0;
-					//		    job->array_out[col][row].red = temp;
-					//		    job->array_out[col][row].green = temp;
-					//		    job->array_out[col][row].blue = temp;
+					for (block_row = 0; block_row < block_size; block_row++)
+					{
+						for (block_col = 0; block_col < block_size; block_col++)
+						{
+							job->array_out[col+block_col][row+block_row].red = 0;
+							job->array_out[col+block_col][row+block_row].green = 0;
+							job->array_out[col+block_col][row+block_row].blue = 0;
+						}
+					}
 				}
 			}
-			else
-			{
-				job->array_out[col][row].red = 80;
-				job->array_out[col][row].green = 190;
-				job->array_out[col][row].blue = 70;
-			}
 
-			//this will reset my slider counter so i dont have to make a queue or anything slow like that
-			counter++;
-			counter%=size;
-
+			job->progress = (double)row / job->height;
 		}
 
-		job->progress = (double)col / (job->width) +.5;
-
-    }
 
 	job->progress = 1;
 
@@ -243,7 +173,7 @@ GtkWidget * create_texture_gui()
 	//    texture_threshold_value = gtk_adjustment_new (0.0, 0.0, 101.0, 0.1, 1.0, 1.0);
 
 
-	texture_threshold_value = gtk_adjustment_new (texture_threshold, 0, 256, 1, 1, 1);
+	texture_threshold_value = gtk_adjustment_new (texture_threshold, 0, 255, 1, 1, 1);
 	texture_hscale = gtk_hscale_new (GTK_ADJUSTMENT (texture_threshold_value));
 	gtk_scale_set_digits( GTK_SCALE(texture_hscale), 0);
 	//  gtk_range_set_update_policy      (GtkRange      *range,   GtkUpdateType  policy);
@@ -251,7 +181,7 @@ GtkWidget * create_texture_gui()
 	gtk_widget_show (texture_hscale);
 
 	g_signal_connect (texture_check_button, "clicked", G_CALLBACK (cb_texture_check_button), &texture_plugin.checked);
-	g_signal_connect (GTK_OBJECT (texture_threshold_value), "value_changed", G_CALLBACK (gimp_int_adjustment_update), &texture_threshold);
+	g_signal_connect (GTK_OBJECT (texture_threshold_value), "value_changed", G_CALLBACK (gimp_float_adjustment_update), &texture_threshold);
 
 	gtk_container_add (GTK_CONTAINER (tab_box), texture_hscale);
 
