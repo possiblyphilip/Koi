@@ -24,6 +24,10 @@ int jpeg_threshold = 64;
 
 #define SLEEP_TIME 10
 
+pthread_cond_t      jpeg_cond  = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t     jpeg_mutex = PTHREAD_MUTEX_INITIALIZER;
+volatile int jpeg_wait = 1;
+
 
 void * jpeg_highlighter_algorithm(JOB_ARG *job)
 {
@@ -104,13 +108,30 @@ void * jpeg_highlighter_algorithm(JOB_ARG *job)
 		gimp_threshold(job->drawable->drawable_id, jpeg_threshold,255 );
 		printf("threshold\n");
 
-		job->progress = 4;
 
+
+//		job->progress = 4;
+
+		pthread_cond_broadcast(&jpeg_cond);
+		pthread_mutex_lock(&jpeg_mutex);
+		printf("got lock\n");
+		jpeg_wait = 0;
+		pthread_mutex_unlock(&jpeg_mutex);
+
+	}
+	else
+	{
+		printf("thread %d waiting\n", job->thread);
+		pthread_mutex_lock(&jpeg_mutex);
+		while (jpeg_wait)
+		{
+			pthread_cond_wait(&jpeg_cond, &jpeg_mutex);
+		}
+		pthread_mutex_unlock(&jpeg_mutex);
 	}
 
 
-
-	job->progress = 0;
+	job->progress = 1;
 
 	return NULL;
 }

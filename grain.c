@@ -17,7 +17,8 @@
 */
 
 #include "Koi.h"
-#include"grain.h"
+#include "grain.h"
+#include "laplace.c"
 
 int grain_radius = 16;
 
@@ -25,71 +26,6 @@ pthread_cond_t      grain_cond  = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t     grain_mutex = PTHREAD_MUTEX_INITIALIZER;
 volatile int grain_wait_var = 1;
 
-
-void laplace(JOB_ARG *job)
-{
-
-	int offset_col, offset_row;
-	int SUM;
-	int	MASK[5][5];
-	int row, col;
-	int temp;
-	int max_col;
-
-	/* 5x5 Laplace mask.  Ref: Myler Handbook p. 135 */
-	MASK[0][0] = -1; MASK[0][1] = -1; MASK[0][2] = -1; MASK[0][3] = -1; MASK[0][4] = -1;
-	MASK[1][0] = -1; MASK[1][1] = -1; MASK[1][2] = -1; MASK[1][3] = -1; MASK[1][4] = -1;
-	MASK[2][0] = -1; MASK[2][1] = -1; MASK[2][2] = 24; MASK[2][3] = -1; MASK[2][4] = -1;
-	MASK[3][0] = -1; MASK[3][1] = -1; MASK[3][2] = -1; MASK[3][3] = -1; MASK[3][4] = -1;
-	MASK[4][0] = -1; MASK[4][1] = -1; MASK[4][2] = -1; MASK[4][3] = -1; MASK[4][4] = -1;
-
-	if(job->start_colum+job->width+5 < job->width*NUM_THREADS)
-	{
-		max_col = job->start_colum+job->width+5;
-
-	}
-	else
-	{
-		max_col = (job->width*NUM_THREADS)-5;
-	}
-
-	for(row = 0; row < job->height-5; row++)
-	{
-		for(col = job->start_colum; col < max_col; col++)
-		{
-			SUM = 0;
-
-			for(offset_row=0; offset_row < 5; offset_row++)
-			{
-				for(offset_col=0; offset_col < 5; offset_col++)
-				{
-					temp = 0;
-
-					temp += job->array_in[col+offset_col][row+offset_row].red;
-					temp += job->array_in[col+offset_col][row+offset_row].green;
-					temp += job->array_in[col+offset_col][row+offset_row].blue;
-
-					temp /= 3;
-
-					SUM += temp * MASK[offset_col][offset_row];
-
-				}
-			}
-
-			SUM = abs(SUM);
-
-			if(SUM>255)
-			{
-				SUM=255;
-			}
-
-
-			job->array_out[col][row].red = SUM;
-			job->array_out[col][row].green = SUM;
-			job->array_out[col][row].blue = SUM;
-		}
-	}
-}
 
 void * grain_highlighter_algorithm(JOB_ARG *job)
 {

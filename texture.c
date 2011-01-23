@@ -17,17 +17,13 @@
 */
 
 #include"texture.h"
+#include "laplace.c"
 
-gfloat texture_threshold = 25;
+gfloat texture_threshold = 18;
 
 void * texture_highlighter_algorithm(JOB_ARG *job)
 {
-
 	int block_size = 16;
-
-    guchar slider[20];
-    int ii;
-    int counter = 0;
 	int temp;
 	int row, col, block_row,block_col;
 	int max_col;
@@ -37,40 +33,23 @@ void * texture_highlighter_algorithm(JOB_ARG *job)
 	printf("texture threshold = %f\n", texture_threshold);
 
 
-    //get the argument passed in, and set our local variables
-//	JOB_ARG* job = (JOB_ARG*)pArg;
 
-//	//set my slider to zero
-//    for(ii = 0; ii < size; ii++)
-//    {
-//		slider[ii] = 0;
-//    }
-
-	//this snipit should let the colums blend in the middle of the image without writing over the edge of the image
-	//basically this allows each thread to read the other threads data so there are not gaps between
-	//the work each thread does
-	if(job->start_colum+job->width+block_size < job->width* NUM_THREADS)
-	{
-		max_col = job->start_colum+job->width;
-	}
-	else
-	{
-		max_col = (job->width*NUM_THREADS) - block_size;
-	}
 
 	//edge find the image
 		laplace(job);
 
-		//copying the output of the laplace job to my input
-//				for (row = 0; row < job->height; row++)
-//				{
-//					for (col = job->start_colum; col < job->start_colum+job->width; col++)
-//					{
-//						job->array_in[col][row].red = job->array_out[col][row].red;
-//						job->array_in[col][row].green = job->array_out[col][row].green;
-//						job->array_in[col][row].blue = job->array_out[col][row].blue;
-//					}
-//				}
+		//this snipit should let the colums blend in the middle of the image without writing over the edge of the image
+		//basically this allows each thread to read the other threads data so there are not gaps between
+		//the work each thread does
+
+		if(job->start_colum+job->width+block_size < job->image.width)
+		{
+			max_col = job->start_colum+job->width;
+		}
+		else
+		{
+			max_col = job->image.width - block_size;
+		}
 
 //		threshold the image by blocks
 		for (row = 0; row < job->height-block_size ; row+=block_size)
@@ -83,8 +62,6 @@ void * texture_highlighter_algorithm(JOB_ARG *job)
 				{
 					for (block_col = 0; block_col < block_size; block_col++)
 					{
-
-
 						temp += job->array_out[col+block_col][row+block_row].red;
 					}
 				}

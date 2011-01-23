@@ -23,7 +23,6 @@
 
 #define SEARCH_DEPTH 1
 
-int                 clone_condition_met = 0;
 pthread_cond_t      clone_cond  = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t     clone_mutex = PTHREAD_MUTEX_INITIALIZER;
 volatile int clone_wait_var = 1;
