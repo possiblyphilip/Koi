@@ -394,6 +394,9 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 				}
 			}
 
+//			drawable->drawable_id = gimp_image_get_active_drawable(image_id);
+//			gimp_pixel_rgn_init (&rgn_out, drawable,  start_colum, start_row, width, height, preview == NULL, TRUE);
+
 			// write the array back to the out image here
 			printf("exporting Koi array\n");
 			gimp_progress_set_text ("exporting Koi array\n");
@@ -428,9 +431,11 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 					gimp_progress_update ((gdouble) (row / height));
 					}
 				}
-
+printf("flushing drawable\n");
 				gimp_drawable_flush (drawable);
+				printf("merge shadow\n");
 				gimp_drawable_merge_shadow (drawable->drawable_id, TRUE);
+				printf("drawable update\n");
 				gimp_drawable_update (drawable->drawable_id, start_colum, start_row, width, height);
 
 			}

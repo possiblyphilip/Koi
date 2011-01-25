@@ -19,10 +19,10 @@
 #include "Koi.h"
 #include"jpeg_compress.h"
 
-gfloat jpeg_compress = .85;
-int jpeg_threshold = 64;
+gfloat jpeg_compress = .99;
+int jpeg_threshold = 60;
 
-#define SLEEP_TIME 10
+#define SLEEP_TIME 5
 
 pthread_cond_t      jpeg_cond  = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t     jpeg_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -48,13 +48,14 @@ void * jpeg_highlighter_algorithm(JOB_ARG *job)
 //		file_name = gimp_image_get_filename (job->image_id);
 
 
-		mkstemp(file_name);
-		printf("got filename %s\n", file_name);
+//		mkstemp(file_name);
+//		printf("using filename %s\n", file_name);
 
 
 		printf("saving jpeg at %f compression\n", jpeg_compress);
 		gimp_run_procedure("file-jpeg-save",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, job->image_id , GIMP_PDB_DRAWABLE, job->drawable->drawable_id, GIMP_PDB_STRING, "/tmp/koi_temp.jpg", GIMP_PDB_STRING, "temp", GIMP_PDB_FLOAT, jpeg_compress, GIMP_PDB_FLOAT, 0.0, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_STRING,"created with Koi", GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 1, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 1, GIMP_PDB_END);
 		printf("waiting for jpeg save\n");
+		sleep(1);
 		gimp_progress_set_text("waiting for jpeg save\n");
 		for(ii = 0; ii < SLEEP_TIME; ii++)
 		{
@@ -99,8 +100,8 @@ void * jpeg_highlighter_algorithm(JOB_ARG *job)
 		printf("get active drawable\n");
 		gimp_brightness_contrast(job->drawable->drawable_id, 126, 125);
 		printf("adjust contrast\n");
-		gimp_run_procedure("plug-in-gauss",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, job->drawable->drawable_id, GIMP_PDB_FLOAT, 20.0, GIMP_PDB_FLOAT, 20.0, GIMP_PDB_INT32, 1, GIMP_PDB_END);
-		printf("blur\n");
+//		gimp_run_procedure("plug-in-gauss",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, job->drawable->drawable_id, GIMP_PDB_FLOAT, 20.0, GIMP_PDB_FLOAT, 20.0, GIMP_PDB_INT32, 1, GIMP_PDB_END);
+//		printf("blur\n");
 		printf("Jpeg threshold: %d\n",jpeg_threshold);
 
 		//I should have this subtract against an edge detection layer and then threshold it
@@ -108,7 +109,7 @@ void * jpeg_highlighter_algorithm(JOB_ARG *job)
 		gimp_threshold(job->drawable->drawable_id, jpeg_threshold,255 );
 		printf("threshold\n");
 
-
+		sleep(1);
 
 //		job->progress = 4;
 

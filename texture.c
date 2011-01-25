@@ -16,10 +16,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include"texture.h"
+#include "Koi.h"
+#include "texture.h"
 #include "laplace.c"
 
-gfloat texture_threshold = 18;
+gfloat texture_threshold = 15;
 
 void * texture_highlighter_algorithm(JOB_ARG *job)
 {
@@ -27,6 +28,9 @@ void * texture_highlighter_algorithm(JOB_ARG *job)
 	int temp;
 	int row, col, block_row,block_col;
 	int max_col;
+	PIXEL **temp_array;
+
+
 
 	printf("inside %s thread %d\n", texture_plugin.name, job->thread);
 
@@ -51,10 +55,13 @@ void * texture_highlighter_algorithm(JOB_ARG *job)
 			max_col = job->image.width - block_size;
 		}
 
+
+			allocate_pixel_array(&temp_array,job->width*2, job->height);
+
 //		threshold the image by blocks
-		for (row = 0; row < job->height-block_size ; row+=block_size)
+		for (row = 0; row < job->height-block_size ; row++)
 		{
-			for (col = job->start_colum; col < max_col; col+=block_size)
+			for (col = job->start_colum; col < max_col; col++)
 			{
 				temp = 0;
 				//loop through the block
@@ -72,29 +79,51 @@ void * texture_highlighter_algorithm(JOB_ARG *job)
 					{
 						for (block_col = 0; block_col < block_size; block_col++)
 						{
-							job->array_out[col+block_col][row+block_row].red = job->array_in[col+block_col][row+block_row].red;
-							job->array_out[col+block_col][row+block_row].green = job->array_in[col+block_col][row+block_row].green;
-							job->array_out[col+block_col][row+block_row].blue = job->array_in[col+block_col][row+block_row].blue;
+							temp_array[col+block_col-job->start_colum][row+block_row].red = job->array_in[col+block_col][row+block_row].red;
+							temp_array[col+block_col-job->start_colum][row+block_row].green = job->array_in[col+block_col][row+block_row].green;
+							temp_array[col+block_col-job->start_colum][row+block_row].blue = job->array_in[col+block_col][row+block_row].blue;
 						}
 					}
 
-				}
-//if its got enough texture ill black it out
-				else
-				{
-					for (block_row = 0; block_row < block_size; block_row++)
-					{
-						for (block_col = 0; block_col < block_size; block_col++)
-						{
-							job->array_out[col+block_col][row+block_row].red = 0;
-							job->array_out[col+block_col][row+block_row].green = 0;
-							job->array_out[col+block_col][row+block_row].blue = 0;
-						}
-					}
+//					for (block_row = 0; block_row < block_size; block_row++)
+//					{
+//						for (block_col = 0; block_col < block_size; block_col++)
+//						{
+//							job->array_in[col+block_col][row+block_row].red = 0;
+//							job->array_in[col+block_col][row+block_row].green = 0;
+//							job->array_in[col+block_col][row+block_row].blue = 0;
+//						}
+//					}
+//
+//				}
+////if its got enough texture ill black it out
+//				else
+//				{
+//
 				}
 			}
 
 			job->progress = (double)row / job->height;
+		}
+
+//		for (row = 0; row < job->height-block_size ; row++)
+//		{
+//			for (col = job->start_colum; col < max_col; col++)
+//			{
+//				job->array_out[col][row].red = 0;
+//				job->array_out[col][row].green = temp_array[col-job->start_colum][row].green;
+//				job->array_out[col][row].blue = temp_array[col-job->start_colum][row].blue;
+//			}
+//		}
+
+		for (row = 0; row < job->height-block_size ; row++)
+		{
+			for (col = job->start_colum; col < max_col; col++)
+			{
+				job->array_out[col][row].red = temp_array[col-job->start_colum][row].red;
+				job->array_out[col][row].green = temp_array[col-job->start_colum][row].green;
+				job->array_out[col][row].blue = temp_array[col-job->start_colum][row].blue;
+			}
 		}
 
 
