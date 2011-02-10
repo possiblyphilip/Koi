@@ -31,57 +31,63 @@ void * speckle_highlighter_algorithm(JOB_ARG *job)
 
 	FLOOD_TYPE point;
 
-//	if(job->thread == 0)
-//	{
-//		sleep(1);
-//	}
+	//	if(job->thread == 0)
+	//	{
+	//		sleep(1);
+	//	}
 
 
 	printf("inside %s thread %d\n", clone_plugin.name, job->thread);
 
     //get the argument passed in, and set our local variables
-//    JOB_ARG* job_args = (JOB_ARG*)pArg;
+	//    JOB_ARG* job_args = (JOB_ARG*)pArg;
 
 	//this snipit should let the colums blend in the middle of the image without writing over the edge of the image
-//	if(job->start_colum+job->width < job->image.width)
-//	{
-		max_col = job->start_colum+job->width;
-//	}
-//	else
-//	{
-//		max_col = (job->width*NUM_THREADS);
-//	}
+	//	if(job->start_colum+job->width < job->image.width)
+	//	{
+	max_col = job->start_colum+job->width;
+	//	}
+	//	else
+	//	{
+	//		max_col = (job->width*NUM_THREADS);
+	//	}
 
 
 	//edge find the image
-		laplace(job);
+	laplace(job);
+
+
 
 	printf("thread %d start colum %d max col %d\n", job->thread, job->start_colum, max_col);
 
-
-		for (row = 0; row < job->height; row++)
+	//copy the output of laplace into the input of this algo
+	for (row = 0; row < job->height; row++)
+	{
+		for (col = job->start_colum; col < max_col; col++)
 		{
-			for (col = job->start_colum; col < max_col; col++)
-			{
 
 
-					job->array_in[col][row].red = job->array_out[col][row].red;
-					job->array_in[col][row].green = job->array_out[col][row].green;
-					job->array_in[col][row].blue = job->array_out[col][row].blue;
-			}
+			job->array_in[col][row].red = job->array_out[col][row].red;
+			job->array_in[col][row].green = job->array_out[col][row].green;
+			job->array_in[col][row].blue = job->array_out[col][row].blue;
 		}
+	}
 
-		for (row = 0; row < job->height; row++)
+
+	//write the old output to black
+	for (row = 0; row < job->height; row++)
+	{
+		for (col = job->start_colum; col < max_col; col++)
 		{
-			for (col = job->start_colum; col < max_col; col++)
-			{
 
 
-				job->array_out[col][row].red = 0;
-				job->array_out[col][row].green = 0;
-				job->array_out[col][row].blue = 0;
-			}
+			job->array_out[col][row].red = 0;
+			job->array_out[col][row].green = 0;
+			job->array_out[col][row].blue = 0;
 		}
+	}
+
+
 
 	for (row = 0; row < job->height; row++)
 	{
@@ -94,30 +100,33 @@ void * speckle_highlighter_algorithm(JOB_ARG *job)
 				job->options = &point;
 				temp = flood(job);
 
-//				if(temp > 1)
-//				{
-//
-//					job->array_out[col][row].red = temp;
-//					job->array_out[col][row].green = temp;
-//					job->array_out[col][row].blue = temp;
-//				}
-//				else
-//				{
-//
-//
-//
-//					job->array_out[col][row].red = temp;
-//					job->array_out[col][row].green = 255;
-//					job->array_out[col][row].blue = 255;
-//				}
+				//				if(temp > 1)
+				//				{
+				//
+				//					job->array_out[col][row].red = temp;
+				//					job->array_out[col][row].green = temp;
+				//					job->array_out[col][row].blue = temp;
+				//				}
+				//				else
+				//				{
+				//
+				//
+				//
+				//					job->array_out[col][row].red = 255;
+				//					job->array_out[col][row].green = 125;
+				//					job->array_out[col][row].blue = 76;
+				//				}
 			}
 		}
 		job->progress = (double)row / job->height;
 	}
 
+
 	job->array_out[job->start_colum][10].red = 255;
 	job->array_out[job->start_colum][10].green = 0;
 	job->array_out[job->start_colum][10].blue = 0;
+
+
 
 	job->progress = 1;
 
