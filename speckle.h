@@ -19,15 +19,11 @@
 #include "Koi.h"
 
 #ifndef SPECKLE_H
-
-typedef struct
-{
-    int red;
-int green;
-int blue;
-
-}color_struct;
-
 #define SPECKLE_H
+
+GtkWidget * create_speckle_gui();
+void create_speckle_plugin();
+
+KOI_PLUGIN speckle_plugin;
 
 #endif // SPECKLE_H

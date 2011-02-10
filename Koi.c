@@ -40,6 +40,10 @@
 #include "jpeg_compress.c"
 
 
+#include "speckle.h"
+#include "speckle.c"
+
+
 MAIN()
 
 		static void query (void)
