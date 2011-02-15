@@ -398,6 +398,24 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 				}
 			}
 
+			//heres where I am going to look at the algorithm output and decide what to write into the log file
+
+			//###########################33
+//
+			thread_return_value[0] = pthread_create((pthread_t*) &thread_id[0], NULL, (void *(*)(void *))plugin[jj]->analyze, (void*)&job[0]);
+			if (thread_return_value[0] != 0)
+			{
+				printf("thread %s failed to start\n",plugin[jj]->name);
+				//something bad happened
+			}
+
+
+//			plugin[jj]->analyze(job[0]);
+
+
+			//I dont think i need the pthread join because i dont care if its still working when the next one kicks off
+	//###########################33
+
 //			drawable->drawable_id = gimp_image_get_active_drawable(image_id);
 //			gimp_pixel_rgn_init (&rgn_out, drawable,  start_colum, start_row, width, height, preview == NULL, TRUE);
 

@@ -197,12 +197,133 @@ GtkWidget * create_texture_gui()
 	return tab_box;
 }
 
+void * texture_highlighter_analyze(JOB_ARG *job)
+{
+	int row;
+	int col;
+
+	FILE *log_file;
+
+	int temp = 0;
+
+	log_file = fopen("/tmp/koi_log.txt", "a");
+
+	if(log_file == NULL)
+	{
+		printf("failed to open /tmp/koi_log.txt\n");
+	}
+
+	//####################################
+	for (row = 0; row < job->image.height/2; row++)
+	{
+		for (col = 0; col < job->image.width/2; col++)
+		{
+			if(job->array_out[col][row].red > 0)
+			{
+				temp ++;
+			}
+		}
+	}
+	if(temp / 10000)
+	{
+		fprintf(log_file, "alot of texture loss in the top left - %d fuzzy pixels\n", temp);
+	}
+	else if(temp > 1000)
+	{
+		fprintf(log_file, "some texture loss in the top left\n");
+	}
+	else
+	{
+		fprintf(log_file, "Did not find any texture loss in the top left\n");
+	}
+
+	//####################################
+	temp = 0;
+	for (row = job->image.height/2; row < job->image.height; row++)
+	{
+		for (col = 0; col < job->image.width/2; col++)
+		{
+			if(job->array_out[col][row].red > 0)
+			{
+				temp ++;
+			}
+		}
+	}
+	if(temp / 10000)
+	{
+		fprintf(log_file, "alot of texture loss in the bottom left - %d fuzzy pixels\n", temp);
+	}
+	else if(temp > 1000)
+	{
+		fprintf(log_file, "some texture loss in the bottom left\n");
+	}
+	else
+	{
+		fprintf(log_file, "Did not find any texture loss in the bottom left\n");
+	}
+	//####################################
+	temp = 0;
+	for (row = 0; row < job->image.height/2; row++)
+	{
+		for (col = job->image.width/2; col < job->image.width; col++)
+		{
+			if(job->array_out[col][row].red > 0)
+			{
+				temp ++;
+			}
+		}
+	}
+	if(temp / 10000)
+	{
+		fprintf(log_file, "alot of texture loss in the top right- %d fuzzy pixels\n", temp);
+	}
+	else if(temp > 1000)
+	{
+		fprintf(log_file, "some texture loss in the top right\n");
+	}
+	else
+	{
+		fprintf(log_file, "Did not find any texture loss in the top right\n");
+	}
+
+	//####################################
+	temp = 0;
+	for (row = job->image.height/2; row < job->image.height; row++)
+	{
+		for (col = job->image.width/2; col < job->image.width; col++)
+		{
+			if(job->array_out[col][row].red > 0)
+			{
+				temp ++;
+			}
+		}
+	}
+	if(temp / 10000)
+	{
+		fprintf(log_file, "alot of texture loss in the bottom right - %d fuzzy pixels\n", temp);
+	}
+	else if(temp > 1000)
+	{
+		fprintf(log_file, "some texture loss in the bottom right\n");
+	}
+	else
+	{
+		fprintf(log_file, "Did not find any texture loss in the bottom right\n");
+	}
+
+	fclose(log_file);
+
+
+
+}
+
 void create_texture_plugin()
 {
 	printf("creating texture plugin\n");
 	texture_plugin.checked = FALSE;
 	texture_plugin.name = "Texture Highliter";
 	texture_plugin.label = gtk_label_new (texture_plugin.name);
+		texture_plugin.analyze = &texture_highlighter_analyze;
 	texture_plugin.algorithm = &texture_highlighter_algorithm;
 	texture_plugin.create_gui = &create_texture_gui;
 

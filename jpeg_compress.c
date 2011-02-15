@@ -210,6 +210,40 @@ GtkWidget * create_jpeg_gui()
 	return tab_box;
 }
 
+void * jpeg_highlighter_analyze(JOB_ARG *job)
+{
+	int row;
+	int col;
+
+	FILE *log_file;
+
+	int temp = 0;
+
+	for (row = 0; row < job->image.height; row++)
+	{
+		for (col = 0; col < job->image.width; col++)
+		{
+			temp += job->array_out[col][row].red;
+		}
+	}
+
+	log_file = fopen("/tmp/koi_log.txt", "a");
+
+	if(log_file == NULL)
+	{
+		printf("failed to open /tmp/koi_log.txt\n");
+	}
+
+
+
+	fprintf(log_file, "dont know how to analyze jpeg output currently\n");
+
+	fclose(log_file);
+
+
+
+}
+
 void create_jpeg_plugin()
 {
 	printf("creating jpeg plugin\n");
@@ -217,6 +251,7 @@ void create_jpeg_plugin()
 	jpeg_plugin.name = "Jpeg compression age";
 	jpeg_plugin.label = gtk_label_new (jpeg_plugin.name);
 	jpeg_plugin.algorithm = &jpeg_highlighter_algorithm;
+	jpeg_plugin.analyze = &jpeg_highlighter_analyze;
 	jpeg_plugin.create_gui = &create_jpeg_gui;
 
 	printf("jpeg plugin created\n");

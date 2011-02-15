@@ -248,6 +248,35 @@ GtkWidget * create_grain_gui()
 
 	return tab_box;
 }
+void * grain_highlighter_analyze(JOB_ARG *job)
+{
+	int row;
+	int col;
+
+	FILE *log_file;
+
+	int temp = 0;
+
+	for (row = 0; row < job->image.height; row++)
+	{
+		for (col = 0; col < job->image.width; col++)
+		{
+			temp += job->array_out[col][row].red;
+		}
+	}
+
+	log_file = fopen("/tmp/koi_log.txt", "a");
+
+	if(log_file == NULL)
+	{
+		printf("failed to open /tmp/koi_log.txt\n");
+	}
+
+	fprintf(log_file, "dont know what to do with the grain just yet\n", temp);
+
+	fclose(log_file);
+
+}
 
 void create_grain_plugin()
 {
@@ -256,62 +285,9 @@ void create_grain_plugin()
 	grain_plugin.name = "Grain Highliter";
 	grain_plugin.label = gtk_label_new (grain_plugin.name);
 	grain_plugin.algorithm = &grain_highlighter_algorithm;
+	grain_plugin.analyze = &grain_highlighter_analyze;
 	grain_plugin.create_gui = &create_grain_gui;
 
 	printf("grain plugin created\n");
 
 }
-
-
-//	if(job->thread == 0)
-//	{
-//
-//				printf("making new pixel region\n");
-//		gimp_pixel_rgn_init (&rgn_in, job->drawable, job->start_colum, 0,job->width, job->height, FALSE, FALSE);
-//		sleep(3);
-//		printf("making image gray scale\n");
-//		gimp_run_procedure("gimp-desaturate",&num_return_vals, GIMP_PDB_DRAWABLE, job->drawable->drawable_id, GIMP_PDB_END);
-//		sleep(3);
-//		printf("edge finding\n");
-//		gimp_run_procedure("plug-in-edge",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, job->drawable->drawable_id, GIMP_PDB_FLOAT, 9.99, GIMP_PDB_INT32, 2, GIMP_PDB_INT32, 5, GIMP_PDB_END);
-//		printf("done edge finding\n");
-//		sleep(3);
-//
-//		//dump the gimp image data back into my own array for processing
-//		printf("filling Koi array\n");
-//		gimp_progress_set_text("filling Koi array\n");
-//
-//		for (row = 0; row < job->image.height; row++)
-//		{
-//			for (col = 0; col < job->image.width; col++)
-//			{
-//				gimp_pixel_rgn_get_pixel (&rgn_in, pixel, col,row);
-//
-//				job->array_in[col][row].red = pixel[0];
-//				job->array_in[col][row].green = pixel[1];
-//				job->array_in[col][row].blue = pixel[2];
-//			}
-//
-//			if (row % 50 == 0)
-//			{
-//				gimp_progress_update ((gdouble) row / job->image.height);
-//			}
-//		}
-//
-//		pthread_cond_broadcast(&grain_cond);
-//		pthread_mutex_lock(&grain_mutex);
-//		printf("got lock\n");
-//		grain_wait_var = 0;
-//		pthread_mutex_unlock(&grain_mutex);
-//	}
-//	else
-//	{
-//		printf("thread %d waiting\n", job->thread);
-//		pthread_mutex_lock(&grain_mutex);
-//		while (grain_wait_var)
-//		{
-//			pthread_cond_wait(&grain_cond, &grain_mutex);
-//		}
-//		pthread_mutex_unlock(&grain_mutex);
-//		printf("thread %d running\n", job->thread);
-//	}

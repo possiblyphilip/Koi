@@ -68,6 +68,7 @@ typedef struct
 	int thread;
 	IMAGE image;
 	void *options;
+	char file_name[256];
 }JOB_ARG;
 
 typedef struct
@@ -76,6 +77,7 @@ typedef struct
 	GtkWidget *label;
 	char* name;
 	void * (*algorithm)(JOB_ARG *);
+	void * (*analyze)(JOB_ARG *);
 	GtkWidget* (*create_gui)();
 	void *options;
 }KOI_PLUGIN;

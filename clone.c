@@ -618,6 +618,128 @@ GtkWidget* create_clone_gui()
 	return tab_box;
 }
 
+void * clone_highlighter_analyze(JOB_ARG *job)
+{
+	int row;
+	int col;
+
+	FILE *log_file;
+
+	int temp = 0;
+
+	log_file = fopen("/tmp/koi_log.txt", "a");
+	if(log_file == NULL)
+	{
+		printf("failed to open /tmp/koi_log.txt\n");
+	}
+
+
+
+
+	//####################################
+	for (row = 0; row < job->image.height/2; row++)
+	{
+		for (col = 0; col < job->image.width/2; col++)
+		{
+			if(job->array_out[col][row].red > 0)
+			{
+				temp ++;
+			}
+		}
+	}
+	if(temp / 10000)
+	{
+		fprintf(log_file, "alot of cloning in the top left - %d cloned pixels\n", temp);
+	}
+	else if(temp > 1000)
+	{
+		fprintf(log_file, "some cloning in the top left\n");
+	}
+	else
+	{
+		fprintf(log_file, "Did not find any cloning in the top left\n");
+	}
+
+	//####################################
+	temp = 0;
+	for (row = job->image.height/2; row < job->image.height; row++)
+	{
+		for (col = 0; col < job->image.width/2; col++)
+		{
+			if(job->array_out[col][row].red > 0)
+			{
+				temp ++;
+			}
+		}
+	}
+	if(temp / 10000)
+	{
+		fprintf(log_file, "alot of cloning in the bottom left - %d cloned pixels\n", temp);
+	}
+	else if(temp > 1000)
+	{
+		fprintf(log_file, "some cloning in the bottom left\n");
+	}
+	else
+	{
+		fprintf(log_file, "Did not find any cloning in the bottom left\n");
+	}
+	//####################################
+	temp = 0;
+	for (row = 0; row < job->image.height/2; row++)
+	{
+		for (col = job->image.width/2; col < job->image.width; col++)
+		{
+			if(job->array_out[col][row].red > 0)
+			{
+				temp ++;
+			}
+		}
+	}
+	if(temp / 10000)
+	{
+		fprintf(log_file, "alot of cloning in the top right- %d cloned pixels\n", temp);
+	}
+	else if(temp > 1000)
+	{
+		fprintf(log_file, "some cloning in the top right\n");
+	}
+	else
+	{
+		fprintf(log_file, "Did not find any cloning in the top right\n");
+	}
+
+	//####################################
+	temp = 0;
+	for (row = job->image.height/2; row < job->image.height; row++)
+	{
+		for (col = job->image.width/2; col < job->image.width; col++)
+		{
+			if(job->array_out[col][row].red > 0)
+			{
+				temp ++;
+			}
+		}
+	}
+	if(temp / 10000)
+	{
+		fprintf(log_file, "alot of cloning in the bottom right - %d cloned pixels\n", temp);
+	}
+	else if(temp > 1000)
+	{
+		fprintf(log_file, "some cloning in the bottom right\n");
+	}
+	else
+	{
+		fprintf(log_file, "Did not find any cloning in the bottom right\n");
+	}
+
+	fclose(log_file);
+
+
+
+}
+
 void create_clone_plugin()
 {
 	printf("creating clone plugin\n");
@@ -625,6 +747,7 @@ void create_clone_plugin()
 	clone_plugin.name = "Clone Highliter";
 	clone_plugin.label = gtk_label_new (clone_plugin.name);
 	clone_plugin.algorithm = &clone_highlighter_algorithm;
+	clone_plugin.analyze = &clone_highlighter_analyze;
 	clone_plugin.create_gui = &create_clone_gui;
 //	clone_plugin.options = &clone_block_size;
 	printf("clone plugin created\n");

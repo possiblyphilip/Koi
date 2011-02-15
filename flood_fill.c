@@ -35,9 +35,9 @@ int flood(JOB_ARG *job)
 
 
 	//this makes sure that the center wont get recursed on
-	job->array_in[center_point->col][center_point->row].red = 0;
-	job->array_in[center_point->col][center_point->row].green = 0;
-	job->array_in[center_point->col][center_point->row].blue = 0;
+//	job->array_in[center_point->col][center_point->row].red = 0;
+//	job->array_in[center_point->col][center_point->row].green = 0;
+//	job->array_in[center_point->col][center_point->row].blue = 0;
 
 //		printf("image height %d image width %d\n",job->image.height, job->image.width);
 
@@ -59,17 +59,23 @@ int flood(JOB_ARG *job)
 							pixel.red = job->array_in[offset_col+center_point->col][offset_row+center_point->row].red;
 							pixel.green = job->array_in[offset_col+center_point->col][offset_row+center_point->row].green;
 							pixel.blue = job->array_in[offset_col+center_point->col][offset_row+center_point->row].blue;
-
+//							if(job->array_in[offset_col+center_point->col][offset_row+center_point->row].red > 100)
 							if(test(pixel))
+//							if(0)
 							{
-//															printf("thread %d: pixel %d,%d\n",job->thread, center_point->col,center_point->row);
+//this makes sure that the new center wont get recursed on creating a loop
 								job->array_in[offset_col+center_point->col][offset_row+center_point->row].red = 0;
 								job->array_in[offset_col+center_point->col][offset_row+center_point->row].green = 0;
 								job->array_in[offset_col+center_point->col][offset_row+center_point->row].blue = 0;
 								new_point.col = offset_col+center_point->col;
 								new_point.row = offset_row+center_point->row;
 								job->options = &new_point;
+
+								if(sum < 3)
+								{
+
 								sum += flood(job);
+							}
 
 								if(sum > 255)
 								{
