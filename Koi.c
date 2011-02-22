@@ -402,6 +402,8 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
 			//###########################33
 //
+
+			printf("doing %s analyze\n",plugin[jj]->name);
 			thread_return_value[0] = pthread_create((pthread_t*) &thread_id[0], NULL, (void *(*)(void *))plugin[jj]->analyze, (void*)&job[0]);
 			if (thread_return_value[0] != 0)
 			{
@@ -440,16 +442,21 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 			{
 				for (row = 0; row < height; row++)
 				{
+
 					for (col = 0; col < width; col++)
 					{
+
 						pixel[0] = out_array[col][row].red;
 						pixel[1] = out_array[col][row].green;
 						pixel[2] = out_array[col][row].blue;
+
+
 						gimp_pixel_rgn_set_pixel (&rgn_out, pixel,  col, row);
 					}
 
 					if (row % 50 == 0)
 					{
+
 					gimp_progress_update ((gdouble) (row / height));
 					}
 				}

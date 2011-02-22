@@ -20,6 +20,7 @@
 #include"speckle.h"
 #include "laplace.c"
 #include "flood_fill.c"
+#include <assert.h>
 
 void * speckle_highlighter_algorithm(JOB_ARG *job)
 {
@@ -29,15 +30,17 @@ void * speckle_highlighter_algorithm(JOB_ARG *job)
 
     int max_col;
 
-	FLOOD_TYPE point;
+	POINT_TYPE point;
 
 	//	if(job->thread == 0)
 	//	{
 	//		sleep(1);
 	//	}
 
+	printf("inside %s thread %d\n", speckle_plugin.name, job->thread);
 
-	printf("inside %s thread %d\n", clone_plugin.name, job->thread);
+
+
 
     //get the argument passed in, and set our local variables
 	//    JOB_ARG* job_args = (JOB_ARG*)pArg;
@@ -65,8 +68,8 @@ void * speckle_highlighter_algorithm(JOB_ARG *job)
 	{
 		for (col = job->start_colum; col < max_col; col++)
 		{
-
-
+assert(col>=0 && col < job->image.width);
+assert(row>=0 && row < job->image.height);
 			job->array_in[col][row].red = job->array_out[col][row].red;
 			job->array_in[col][row].green = job->array_out[col][row].green;
 			job->array_in[col][row].blue = job->array_out[col][row].blue;
@@ -80,53 +83,34 @@ void * speckle_highlighter_algorithm(JOB_ARG *job)
 		for (col = job->start_colum; col < max_col; col++)
 		{
 
-
+			assert(col>=0 && col < job->image.width);
+			assert(row>=0 && row < job->image.height);
 			job->array_out[col][row].red = 0;
 			job->array_out[col][row].green = 0;
 			job->array_out[col][row].blue = 0;
 		}
 	}
 
-
+printf("copied array and blacked out array\n");
 
 	for (row = 0; row < job->height; row++)
 	{
 		for (col = job->start_colum; col < max_col; col++)
 		{
-			if(job->array_in[col][row].red > 100)
+			if(job->array_in[col][row].red > 250)
 			{
+				assert(col>=0 && col < job->image.width);
+				assert(row>=0 && row < job->image.height);
 				point.col = col;
 				point.row = row;
 				job->options = &point;
-				temp = flood(job);
-
-				//				if(temp > 1)
-				//				{
-				//
-				//					job->array_out[col][row].red = temp;
-				//					job->array_out[col][row].green = temp;
-				//					job->array_out[col][row].blue = temp;
-				//				}
-				//				else
-				//				{
-				//
-				//
-				//
-				//					job->array_out[col][row].red = 255;
-				//					job->array_out[col][row].green = 125;
-				//					job->array_out[col][row].blue = 76;
-				//				}
+				flood(job);
 			}
 		}
 		job->progress = (double)row / job->height;
 	}
 
-
-	job->array_out[job->start_colum][10].red = 255;
-	job->array_out[job->start_colum][10].green = 0;
-	job->array_out[job->start_colum][10].blue = 0;
-
-
+printf("survived\n");
 
 	job->progress = 1;
 
@@ -188,15 +172,135 @@ GtkWidget * create_speckle_gui()
 	return tab_box;
 }
 
+void * speckle_highlighter_analyze(JOB_ARG *job)
+{
+	int row;
+	int col;
+
+	FILE *log_file;
+
+	int temp = 0;
+
+	log_file = fopen("/tmp/koi_log.txt", "a");
+
+	if(log_file == NULL)
+	{
+		printf("failed to open /tmp/koi_log.txt\n");
+	}
+
+	//####################################
+	for (row = 0; row < job->image.height/2; row++)
+	{
+		for (col = 0; col < job->image.width/2; col++)
+		{
+			if(job->array_out[col][row].red > 0)
+			{
+				temp ++;
+			}
+		}
+	}
+	if(temp / 10000)
+	{
+		fprintf(log_file, "alot of xxxspeckle loss in the top left - %d fuzzy pixels\n", temp);
+	}
+	else if(temp > 1000)
+	{
+		fprintf(log_file, "some xxxspeckle loss in the top left\n");
+	}
+	else
+	{
+		fprintf(log_file, "Did not find any xxxspeckle loss in the top left\n");
+	}
+
+	//####################################
+	temp = 0;
+	for (row = job->image.height/2; row < job->image.height; row++)
+	{
+		for (col = 0; col < job->image.width/2; col++)
+		{
+			if(job->array_out[col][row].red > 0)
+			{
+				temp ++;
+			}
+		}
+	}
+	if(temp / 10000)
+	{
+		fprintf(log_file, "alot of xxxspeckle loss in the bottom left - %d fuzzy pixels\n", temp);
+	}
+	else if(temp > 1000)
+	{
+		fprintf(log_file, "some xxxspeckle loss in the bottom left\n");
+	}
+	else
+	{
+		fprintf(log_file, "Did not find any xxxspeckle loss in the bottom left\n");
+	}
+	//####################################
+	temp = 0;
+	for (row = 0; row < job->image.height/2; row++)
+	{
+		for (col = job->image.width/2; col < job->image.width; col++)
+		{
+			if(job->array_out[col][row].red > 0)
+			{
+				temp ++;
+			}
+		}
+	}
+	if(temp / 10000)
+	{
+		fprintf(log_file, "alot of xxxspeckle loss in the top right- %d fuzzy pixels\n", temp);
+	}
+	else if(temp > 1000)
+	{
+		fprintf(log_file, "some xxxspeckle loss in the top right\n");
+	}
+	else
+	{
+		fprintf(log_file, "Did not find any xxxspeckle loss in the top right\n");
+	}
+
+	//####################################
+	temp = 0;
+	for (row = job->image.height/2; row < job->image.height; row++)
+	{
+		for (col = job->image.width/2; col < job->image.width; col++)
+		{
+			if(job->array_out[col][row].red > 0)
+			{
+				temp ++;
+			}
+		}
+	}
+	if(temp / 10000)
+	{
+		fprintf(log_file, "alot of xxxspeckle loss in the bottom right - %d fuzzy pixels\n", temp);
+	}
+	else if(temp > 1000)
+	{
+		fprintf(log_file, "some xxxspeckle loss in the bottom right\n");
+	}
+	else
+	{
+		fprintf(log_file, "Did not find any xxxspeckle loss in the bottom right\n");
+	}
+
+	fclose(log_file);
+
+
+
+}
+
 void create_speckle_plugin()
 {
 	printf("creating speckle plugin\n");
 	speckle_plugin.checked = FALSE;
 	speckle_plugin.name = "speckle Highliter";
 	speckle_plugin.label = gtk_label_new (speckle_plugin.name);
+	speckle_plugin.analyze = &speckle_highlighter_analyze;
 	speckle_plugin.algorithm = &speckle_highlighter_algorithm;
 	speckle_plugin.create_gui = &create_speckle_gui;
-//	speckle_plugin.options = &speckle_block_size;
 	printf("speckle plugin created\n");
 
 }
