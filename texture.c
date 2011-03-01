@@ -30,7 +30,7 @@ void * texture_highlighter_algorithm(JOB_ARG *job)
 	int max_col;
 	PIXEL **temp_array;
 
-
+	allocate_pixel_array(&temp_array,job->width*2, job->height);
 
 	printf("inside %s thread %d\n", texture_plugin.name, job->thread);
 
@@ -48,7 +48,7 @@ void * texture_highlighter_algorithm(JOB_ARG *job)
 
 		if(job->start_colum+job->width+block_size < job->image.width)
 		{
-			max_col = job->start_colum+job->width;
+			max_col = job->start_colum+job->width+block_size;
 		}
 		else
 		{
@@ -56,7 +56,7 @@ void * texture_highlighter_algorithm(JOB_ARG *job)
 		}
 
 
-			allocate_pixel_array(&temp_array,job->width*2, job->height);
+
 
 //		threshold the image by blocks
 		for (row = 0; row < job->height-block_size ; row++)
@@ -84,39 +84,24 @@ void * texture_highlighter_algorithm(JOB_ARG *job)
 							temp_array[col+block_col-job->start_colum][row+block_row].blue = job->array_in[col+block_col][row+block_row].blue;
 						}
 					}
-
-//					for (block_row = 0; block_row < block_size; block_row++)
-//					{
-//						for (block_col = 0; block_col < block_size; block_col++)
-//						{
-//							job->array_in[col+block_col][row+block_row].red = 0;
-//							job->array_in[col+block_col][row+block_row].green = 0;
-//							job->array_in[col+block_col][row+block_row].blue = 0;
-//						}
-//					}
-//
-//				}
-////if its got enough texture ill black it out
-//				else
-//				{
-//
 				}
 			}
 
 			job->progress = (double)row / job->height;
 		}
 
-//		for (row = 0; row < job->height-block_size ; row++)
-//		{
-//			for (col = job->start_colum; col < max_col; col++)
-//			{
-//				job->array_out[col][row].red = 0;
-//				job->array_out[col][row].green = temp_array[col-job->start_colum][row].green;
-//				job->array_out[col][row].blue = temp_array[col-job->start_colum][row].blue;
-//			}
-//		}
 
-		for (row = 0; row < job->height-block_size ; row++)
+		//I am re doing the max col because its not using blocks here
+		if(job->start_colum+job->width < job->image.width)
+		{
+			max_col = job->start_colum+job->width;
+		}
+		else
+		{
+			max_col = job->image.width;
+		}
+
+		for (row = 0; row < job->height; row++)
 		{
 			for (col = job->start_colum; col < max_col; col++)
 			{

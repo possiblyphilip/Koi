@@ -158,7 +158,7 @@ void * grain_highlighter_algorithm(JOB_ARG *job)
 			}
 
 
-			if(highest/radius > 100)
+			if(highest/radius > 70)
 			{
 				for(ii = 0; ii < radius; ii++)
 				{
@@ -168,9 +168,9 @@ void * grain_highlighter_algorithm(JOB_ARG *job)
 					//		job->array_out[col+col_offset][row+row_offset].green = 230;
 					//		job->array_out[col+col_offset][row+row_offset].blue = 50;
 
-					job->array_out[col+col_offset][row+row_offset].red = highest/radius;
+					job->array_out[col+col_offset][row+row_offset].red = (best_angle/(3.14))*255;
 					job->array_out[col+col_offset][row+row_offset].green = (best_angle/(3.14))*255;
-					job->array_out[col+col_offset][row+row_offset].blue = highest/radius;
+					job->array_out[col+col_offset][row+row_offset].blue = (best_angle/(3.14))*255;
 
 				}
 			}

@@ -60,7 +60,6 @@ void * speckle_highlighter_algorithm(JOB_ARG *job)
 	laplace(job);
 
 
-
 	printf("thread %d start colum %d max col %d\n", job->thread, job->start_colum, max_col);
 
 	//copy the output of laplace into the input of this algo
@@ -97,7 +96,7 @@ printf("copied array and blacked out array\n");
 	{
 		for (col = job->start_colum; col < max_col; col++)
 		{
-			if(job->array_in[col][row].red > 250)
+			if(job->array_in[col][row].red > 250 )
 			{
 				assert(col>=0 && col < job->image.width);
 				assert(row>=0 && row < job->image.height);
@@ -109,6 +108,8 @@ printf("copied array and blacked out array\n");
 		}
 		job->progress = (double)row / job->height;
 	}
+
+
 
 printf("survived\n");
 

@@ -80,7 +80,7 @@ MAIN()
 			G_N_ELEMENTS (args), 0,
 			args, NULL);
 
-	gimp_plugin_menu_register ("plug-in-Koi", "<Image>/Filters/Misc");
+	gimp_plugin_menu_register ("plug-in-Koi", "<Image>/Tools");
 }
 
 static void run (const char *name, int nparams, const GimpParam *param,  int *nreturn_vals, GimpParam **return_vals)

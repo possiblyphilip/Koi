@@ -106,46 +106,6 @@ POINT_TYPE dequeue(QUEUE_TYPE *queue)
 		}
 		return temp_node.point;
 	}
-
-//	NODE_TYPE temp_node;
-//	if(queue->p_first == 0)
-//	{
-//		printf("something went wrong and im trying to dequeue an empty queue\n");
-//		temp_node.point.col = 0;
-//		temp_node.point.row = 0;
-//		return temp_node.point;
-//	}
-//	else
-//	{
-//
-//		temp_node.point = queue->p_first->point;
-//		temp_node.p_next = queue->p_first->p_next;
-//
-//		if(queue->p_first != 0)
-//		{
-//
-//			free(queue->p_first);
-//			queue->p_first = 0;
-//		}
-//		else
-//		{
-//			printf("something went wrong and im trying to free a null node in dequeue\n");
-//		}
-//
-//		if(temp_node.p_next == 0)
-//		{
-//			queue->p_first = 0;
-//			queue->p_last = 0;
-//		}
-//		else
-//		{
-//
-//			queue->p_first = (NODE_TYPE*)temp_node.p_next;
-//		}
-//
-//		return temp_node.point;
-//
-//	}
 }
 
 int queue_is_empty(QUEUE_TYPE queue)
@@ -180,7 +140,8 @@ int test(PIXEL pixel)
 
 void * flood(JOB_ARG *job)
 {
-
+	int max_col, min_col;
+	int max_row, min_row;
 	int offset_col, offset_row;
 	int count = 0;
 	PIXEL pixel;
@@ -191,21 +152,23 @@ void * flood(JOB_ARG *job)
 	QUEUE_TYPE search_queue;
 	QUEUE_TYPE flood_queue;
 
-//		printf("in flood fill\n");
+	max_col = 0;
+	max_row = 0;
+
+	min_col = INT_MAX;
+	min_row = INT_MAX;
 
 	make_queue(&search_queue);
 	make_queue(&flood_queue);
 
-
-//	printf("made queues\n");
-
 	start_point = (POINT_TYPE*)job->options;
-	//start_point->col][start_point->row
 
-//	assert(col>=0 && col < job->image.width);
-//	assert(row>=0 && row < job->image.height);
 
 	//this makes sure that the center wont get re called
+//	job->array_in[start_point->col][start_point->row].red = 255;
+//	job->array_in[start_point->col][start_point->row].green = 255;
+//	job->array_in[start_point->col][start_point->row].blue = 255;
+
 	job->array_in[start_point->col][start_point->row].red = 0;
 	job->array_in[start_point->col][start_point->row].green = 0;
 	job->array_in[start_point->col][start_point->row].blue = 0;
@@ -252,16 +215,39 @@ void * flood(JOB_ARG *job)
 						if(test(pixel))
 						{
 							//this makes sure that this point wont get re called
+//							job->array_in[offset_col+temp_point.col][offset_row+temp_point.row].red = 255;
+//							job->array_in[offset_col+temp_point.col][offset_row+temp_point.row].green = 255;
+//							job->array_in[offset_col+temp_point.col][offset_row+temp_point.row].blue = 255;
+
 							job->array_in[offset_col+temp_point.col][offset_row+temp_point.row].red = 0;
 							job->array_in[offset_col+temp_point.col][offset_row+temp_point.row].green = 0;
 							job->array_in[offset_col+temp_point.col][offset_row+temp_point.row].blue = 0;
 
-							//					new_point = (POINT_TYPE*)malloc(sizeof(POINT_TYPE));
-							//
-							//						printf("malloced a new point\n");
-							//
+
+
+
+
 							new_point.col = offset_col+temp_point.col;
 							new_point.row = offset_row+temp_point.row;
+
+
+							//i will use this later to write out the width and height of the speckle
+							if(new_point.col > max_col)
+							{
+								max_col = new_point.col;
+							}
+							if(new_point.col < min_col)
+							{
+								min_col = new_point.col;
+							}
+							if(new_point.row > max_row)
+							{
+								max_row = new_point.row;
+							}
+							if(new_point.row < min_row)
+							{
+								min_row = new_point.row;
+							}
 
 							enqueue(&search_queue,new_point);
 
@@ -277,25 +263,38 @@ void * flood(JOB_ARG *job)
 
 	while(!queue_is_empty(flood_queue))
 	{
-
-		//		printf("going to dequeue\n");
-
 		temp_point = dequeue(&flood_queue);
 
-		//		printf("dequeued point col %d row %d\n",temp_point.col,temp_point.row);
-
+// size of the speckle is written out as the green value
 		if(count < 765)
 		{
-			job->array_out[temp_point.col][temp_point.row].red = count/3;
 			job->array_out[temp_point.col][temp_point.row].green = count/3;
-			job->array_out[temp_point.col][temp_point.row].blue = count/3;
+		}
+		else
+		{
+			job->array_out[temp_point.col][temp_point.row].green = 255;
+		}
+
+		//width of the speckle is written out as its red value
+		if(max_col-min_col < 256)
+		{
+			job->array_out[temp_point.col][temp_point.row].red = max_col-min_col;
 		}
 		else
 		{
 			job->array_out[temp_point.col][temp_point.row].red = 255;
-			job->array_out[temp_point.col][temp_point.row].green = 255;
+		}
+
+		//height of the speckle is written out as its blue value
+		if(max_row-min_row < 256)
+		{
+			job->array_out[temp_point.col][temp_point.row].blue = max_row-min_row;
+		}
+		else
+		{
 			job->array_out[temp_point.col][temp_point.row].blue = 255;
 		}
+
 	}
 }
 #endif //FLOOD
