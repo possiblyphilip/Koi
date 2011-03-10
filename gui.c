@@ -20,9 +20,10 @@
 #include "texture.h"
 #include "jpeg_compress.h"
 #include "speckle.h"
+#include "mosaic.h"
 #include "gui.h"
 
-	#define NUM_PLUGINS 5
+	#define NUM_PLUGINS 6
 	KOI_PLUGIN* plugin[NUM_PLUGINS];
 
 static gboolean koi_dialog (GimpDrawable *drawable)
@@ -80,6 +81,9 @@ static gboolean koi_dialog (GimpDrawable *drawable)
 
 	create_speckle_plugin();
 	plugin[4] = &speckle_plugin;
+
+	create_mosaic_plugin();
+	plugin[5] = &mosaic_plugin;
 
 	main_vbox = gtk_vbox_new (FALSE, 6);
 	gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), main_vbox);

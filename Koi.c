@@ -43,6 +43,9 @@
 #include "speckle.h"
 #include "speckle.c"
 
+#include "mosaic.h"
+#include "mosaic.c"
+
 
 MAIN()
 
@@ -385,7 +388,9 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
 				gimp_progress_update (temp);
 //I need to look into a shorter sleep timer
-				sleep(1);
+
+				usleep(250000);
+//				sleep(1);
 			}
 			//all the threads are allready done at this point but i wrap them up here
 			for(ii = 0; ii < NUM_THREADS; ii++)

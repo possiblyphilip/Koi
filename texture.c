@@ -111,6 +111,9 @@ void * texture_highlighter_algorithm(JOB_ARG *job)
 			}
 		}
 
+		//the x2 is sketch but i have it in there because it was crashing for some reason ... really aught to go fix it
+
+	free_pixel_array(temp_array,job->width*2);
 
 	job->progress = 1;
 

@@ -25,93 +25,125 @@
 void * speckle_highlighter_algorithm(JOB_ARG *job)
 {
 
-    int temp = 0;
+	int threshold = 255;
+	float count = 1;
+	long long size = 0;
 	int row, col;
-
     int max_col;
-
 	POINT_TYPE point;
 
-	//	if(job->thread == 0)
-	//	{
-	//		sleep(1);
-	//	}
+	PIXEL **temp_array;
+
+	allocate_pixel_array(&temp_array,job->width*2, job->height);
 
 	printf("inside %s thread %d\n", speckle_plugin.name, job->thread);
 
+	//this snipit should let the colums blend in the middle of the image without writing over the edge of the image
 
 
+		max_col = job->start_colum+job->width;
+
+
+	//i copy the array so i can keep it fresh and not mess it up when i do multiple revs to get
+	//the auto threshold right
+	for (row = 0; row < job->height; row++)
+	{
+		for (col = job->start_colum; col < max_col; col++)
+		{
+			temp_array[col-job->start_colum][row].red = job->array_in[col][row].red;
+			temp_array[col-job->start_colum][row].green = job->array_in[col][row].green;
+			temp_array[col-job->start_colum][row].blue = job->array_in[col][row].blue;
+		}
+	}
 
     //get the argument passed in, and set our local variables
 	//    JOB_ARG* job_args = (JOB_ARG*)pArg;
 
-	//this snipit should let the colums blend in the middle of the image without writing over the edge of the image
-	//	if(job->start_colum+job->width < job->image.width)
-	//	{
-	max_col = job->start_colum+job->width;
-	//	}
-	//	else
-	//	{
-	//		max_col = (job->width*NUM_THREADS);
-	//	}
 
-
-	//edge find the image
-	laplace(job);
-
-
-	printf("thread %d start colum %d max col %d\n", job->thread, job->start_colum, max_col);
-
-	//copy the output of laplace into the input of this algo
-	for (row = 0; row < job->height; row++)
+	while ((size / (float)count) < 2)
 	{
-		for (col = job->start_colum; col < max_col; col++)
+		//its set to 1 so i dont dev by zero
+		count = 1;
+		size = 0;
+
+
+
+		//copy in the fresh array
+		for (row = 0; row < job->height; row++)
 		{
-assert(col>=0 && col < job->image.width);
-assert(row>=0 && row < job->image.height);
-			job->array_in[col][row].red = job->array_out[col][row].red;
-			job->array_in[col][row].green = job->array_out[col][row].green;
-			job->array_in[col][row].blue = job->array_out[col][row].blue;
-		}
-	}
-
-
-	//write the old output to black
-	for (row = 0; row < job->height; row++)
-	{
-		for (col = job->start_colum; col < max_col; col++)
-		{
-
-			assert(col>=0 && col < job->image.width);
-			assert(row>=0 && row < job->image.height);
-			job->array_out[col][row].red = 0;
-			job->array_out[col][row].green = 0;
-			job->array_out[col][row].blue = 0;
-		}
-	}
-
-printf("copied array and blacked out array\n");
-
-	for (row = 0; row < job->height; row++)
-	{
-		for (col = job->start_colum; col < max_col; col++)
-		{
-			if(job->array_in[col][row].red > 250 )
+			for (col = job->start_colum; col < max_col; col++)
 			{
-				assert(col>=0 && col < job->image.width);
-				assert(row>=0 && row < job->image.height);
-				point.col = col;
-				point.row = row;
-				job->options = &point;
-				flood(job);
+				job->array_in[col][row].red = temp_array[col-job->start_colum][row].red;
+				job->array_in[col][row].green = temp_array[col-job->start_colum][row].green;
+				job->array_in[col][row].blue = temp_array[col-job->start_colum][row].blue;
 			}
 		}
-		job->progress = (double)row / job->height;
+
+		//edge find the image
+		laplace(job);
+
+
+//		printf("thread %d start colum %d max col %d\n", job->thread, job->start_colum, max_col);
+
+		//copy the output of laplace into the input of this algo
+		for (row = 0; row < job->height; row++)
+		{
+			for (col = job->start_colum; col < max_col; col++)
+			{
+				//assert(col>=0 && col < job->image.width);
+				//assert(row>=0 && row < job->image.height);
+				job->array_in[col][row].red = job->array_out[col][row].red;
+				job->array_in[col][row].green = job->array_out[col][row].green;
+				job->array_in[col][row].blue = job->array_out[col][row].blue;
+			}
+		}
+
+
+		//write the old output to black
+		for (row = 0; row < job->height; row++)
+		{
+			for (col = job->start_colum; col < max_col; col++)
+			{
+
+				//			assert(col>=0 && col < job->image.width);
+				//			assert(row>=0 && row < job->image.height);
+				job->array_out[col][row].red = 0;
+				job->array_out[col][row].green = 0;
+				job->array_out[col][row].blue = 0;
+			}
+		}
+
+		//printf("copied array and blacked out array\n");
+
+		for (row = 0; row < job->height; row++)
+		{
+			for (col = job->start_colum; col < max_col; col++)
+			{
+				if(job->array_in[col][row].red > threshold )
+				{
+					//				assert(col>=0 && col < job->image.width);
+					//				assert(row>=0 && row < job->image.height);
+					point.col = col;
+					point.row = row;
+					point.threshold = threshold;
+//					printf("real threshold %d\n",threshold);
+					job->options = &point;
+					size += flood(job);
+					count++;
+				}
+			}
+			job->progress = (double)row / job->height;
+		}
+
+
+
+		printf("thread %d threshold %d size %f\n", job->thread, threshold, (size / (float)count));
+		threshold--;
 	}
 
+	free_pixel_array(temp_array,job->width*2);
 
-
-printf("survived\n");
+//printf("survived\n");
 
 	job->progress = 1;
 
@@ -180,112 +212,113 @@ void * speckle_highlighter_analyze(JOB_ARG *job)
 
 	FILE *log_file;
 
-	int temp = 0;
+	long long top_right_height = 0;
+	long long bottom_right_height = 0;
+	long long top_left_height = 0;
+	long long bottom_left_height = 0;
+
+	long long top_right_width = 0;
+	long long bottom_right_width = 0;
+	long long top_left_width = 0;
+	long long bottom_left_width = 0;
+
+	long long size = 0;
+
+	int num_pixels;
+
+
+	float top_right_filled = 0;
+	float bottom_right_filled = 0;
+	float top_left_filled = 0;
+	float bottom_left_filled = 0;
 
 	log_file = fopen("/tmp/koi_log.txt", "a");
 
 	if(log_file == NULL)
 	{
 		printf("failed to open /tmp/koi_log.txt\n");
+		return;
 	}
 
-	//####################################
-	for (row = 0; row < job->image.height/2; row++)
+	num_pixels = job->image.height * job->image.width;
+
+	for (row = 0; row < job->image.height; row++)
 	{
-		for (col = 0; col < job->image.width/2; col++)
+		for (col = 0; col < job->image.width; col++)
 		{
-			if(job->array_out[col][row].red > 0)
+
+			//top left
+			if(col < job->image.width/2 && row < job->image.height/2)
 			{
-				temp ++;
+				top_left_width += job->array_out[col][row].red;
+				size += job->array_out[col][row].green;
+				top_left_height += job->array_out[col][row].blue;
+
+				if(job->array_out[col][row].green > 0)
+				{
+					top_left_filled++;
+				}
+
+			}
+
+			//top right
+			if(col > job->image.width/2 && row < job->image.height/2)
+			{
+				top_right_width += job->array_out[col][row].red;
+				size += job->array_out[col][row].green;
+				top_right_height += job->array_out[col][row].blue;
+
+				if(job->array_out[col][row].green > 0)
+				{
+					top_right_filled++;
+				}
+			}
+
+			//bottom left
+			if(col < job->image.width/2 && row > job->image.height/2)
+			{
+				bottom_left_width += job->array_out[col][row].red;
+				size += job->array_out[col][row].green;
+				bottom_left_height += job->array_out[col][row].blue;
+
+				if(job->array_out[col][row].green > 0)
+				{
+					bottom_left_filled++;
+				}
+			}
+
+			//bottom right
+			if(col > job->image.width/2 && row > job->image.height/2)
+			{
+				bottom_right_width += job->array_out[col][row].red;
+				size += job->array_out[col][row].green;
+				bottom_right_height += job->array_out[col][row].blue;
+
+				if(job->array_out[col][row].green > 0)
+				{
+					bottom_right_filled++;
+				}
 			}
 		}
-	}
-	if(temp / 10000)
-	{
-		fprintf(log_file, "alot of xxxspeckle loss in the top left - %d fuzzy pixels\n", temp);
-	}
-	else if(temp > 1000)
-	{
-		fprintf(log_file, "some xxxspeckle loss in the top left\n");
-	}
-	else
-	{
-		fprintf(log_file, "Did not find any xxxspeckle loss in the top left\n");
 	}
 
-	//####################################
-	temp = 0;
-	for (row = job->image.height/2; row < job->image.height; row++)
-	{
-		for (col = 0; col < job->image.width/2; col++)
-		{
-			if(job->array_out[col][row].red > 0)
-			{
-				temp ++;
-			}
-		}
-	}
-	if(temp / 10000)
-	{
-		fprintf(log_file, "alot of xxxspeckle loss in the bottom left - %d fuzzy pixels\n", temp);
-	}
-	else if(temp > 1000)
-	{
-		fprintf(log_file, "some xxxspeckle loss in the bottom left\n");
-	}
-	else
-	{
-		fprintf(log_file, "Did not find any xxxspeckle loss in the bottom left\n");
-	}
-	//####################################
-	temp = 0;
-	for (row = 0; row < job->image.height/2; row++)
-	{
-		for (col = job->image.width/2; col < job->image.width; col++)
-		{
-			if(job->array_out[col][row].red > 0)
-			{
-				temp ++;
-			}
-		}
-	}
-	if(temp / 10000)
-	{
-		fprintf(log_file, "alot of xxxspeckle loss in the top right- %d fuzzy pixels\n", temp);
-	}
-	else if(temp > 1000)
-	{
-		fprintf(log_file, "some xxxspeckle loss in the top right\n");
-	}
-	else
-	{
-		fprintf(log_file, "Did not find any xxxspeckle loss in the top right\n");
-	}
 
-	//####################################
-	temp = 0;
-	for (row = job->image.height/2; row < job->image.height; row++)
-	{
-		for (col = job->image.width/2; col < job->image.width; col++)
-		{
-			if(job->array_out[col][row].red > 0)
-			{
-				temp ++;
-			}
-		}
-	}
-	if(temp / 10000)
-	{
-		fprintf(log_file, "alot of xxxspeckle loss in the bottom right - %d fuzzy pixels\n", temp);
-	}
-	else if(temp > 1000)
-	{
-		fprintf(log_file, "some xxxspeckle loss in the bottom right\n");
-	}
-	else
-	{
-		fprintf(log_file, "Did not find any xxxspeckle loss in the bottom right\n");
-	}
+	fprintf(log_file, "Speckle stats\n");
+
+	fprintf(log_file, "avg speckle size %f\n\n", (size/(float)num_pixels) );
+
+	fprintf(log_file, "top left avg speckle width %f\n", top_left_width / top_left_filled );
+	fprintf(log_file, "top left avg speckle height %f\n\n", top_left_height / top_left_filled );
+
+	fprintf(log_file, "top right avg speckle width %f\n", top_right_width / top_right_filled );
+	fprintf(log_file, "top right avg speckle height %f\n\n", top_right_height / top_right_filled );
+
+	fprintf(log_file, "bottom left avg speckle width %f\n", bottom_left_width / bottom_left_filled );
+	fprintf(log_file, "bottom left avg speckle height %f\n\n", bottom_left_height / bottom_left_filled );
+
+	fprintf(log_file, "bottom right avg speckle width %f\n", bottom_right_width / bottom_right_filled );
+	fprintf(log_file, "bottom right avg speckle height %f\n\n", bottom_right_height / bottom_right_filled );
+
 
 	fclose(log_file);
 

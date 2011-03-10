@@ -29,6 +29,7 @@ typedef struct
 {
 	int row;
 	int col;
+	int threshold;
 }POINT_TYPE;
 
 //$$$$$$$$$$$$$$$$$$$$$$$$$44
@@ -126,19 +127,36 @@ int queue_is_empty(QUEUE_TYPE queue)
 
 //$$$$$$$$$$$$$$$$$$$$$$$$$44
 
-int test(PIXEL pixel)
+int test(PIXEL pixel, int threshold)
 {
-	if(pixel.red > 250)
+	if(threshold > 0)
 	{
-		return 1;
+		if(pixel.red > threshold)
+		{
+			return 1;
+		}
+		else
+		{
+			return 0;
+		}
 	}
 	else
 	{
-		return 0;
+		//inverts it so i can do the less than
+		threshold *= -1;
+
+		if(pixel.red < threshold)
+		{
+			return 1;
+		}
+		else
+		{
+			return 0;
+		}
 	}
 }
 
-void * flood(JOB_ARG *job)
+int flood(JOB_ARG *job)
 {
 	int max_col, min_col;
 	int max_row, min_row;
@@ -163,34 +181,21 @@ void * flood(JOB_ARG *job)
 
 	start_point = (POINT_TYPE*)job->options;
 
-
-	//this makes sure that the center wont get re called
-//	job->array_in[start_point->col][start_point->row].red = 255;
-//	job->array_in[start_point->col][start_point->row].green = 255;
-//	job->array_in[start_point->col][start_point->row].blue = 255;
+//	printf("threshold %d\n",start_point->threshold);
 
 	job->array_in[start_point->col][start_point->row].red = 0;
 	job->array_in[start_point->col][start_point->row].green = 0;
 	job->array_in[start_point->col][start_point->row].blue = 0;
 
 
-//	printf("start point %d %d\n", start_point->col, start_point->row);
-
 	enqueue(&search_queue, *start_point);
 
 	while(!queue_is_empty(search_queue))
 	{
 		count++;
-		//		printf("count %d\n", count);
 
 		temp_point = dequeue(&search_queue);
-		//		printf("temp point %d %d\n", temp_point.col, temp_point.row);
-
 		enqueue(&flood_queue, temp_point);
-		//		printf("added point to flood fill list\n");
-
-
-
 
 		for(offset_row = -1; offset_row <= 1; offset_row++)
 		{
@@ -203,33 +208,22 @@ void * flood(JOB_ARG *job)
 				   offset_row+temp_point.row >= 0 &&
 				   offset_row+temp_point.row < job->image.height)
 				{
+					//this makes it do a 4 direction flood instead of an 8
 					if(offset_row+offset_col == 1 || offset_row+offset_col == -1)
 					{
-
-						//					printf("col %d row %d\n",offset_col+temp_point.col,offset_row+temp_point.row);
-
 						pixel.red = job->array_in[offset_col+temp_point.col][offset_row+temp_point.row].red;
 						pixel.green = job->array_in[offset_col+temp_point.col][offset_row+temp_point.row].green;
 						pixel.blue = job->array_in[offset_col+temp_point.col][offset_row+temp_point.row].blue;
 
-						if(test(pixel))
+						if(test(pixel, start_point->threshold))
 						{
-							//this makes sure that this point wont get re called
-//							job->array_in[offset_col+temp_point.col][offset_row+temp_point.row].red = 255;
-//							job->array_in[offset_col+temp_point.col][offset_row+temp_point.row].green = 255;
-//							job->array_in[offset_col+temp_point.col][offset_row+temp_point.row].blue = 255;
-
 							job->array_in[offset_col+temp_point.col][offset_row+temp_point.row].red = 0;
 							job->array_in[offset_col+temp_point.col][offset_row+temp_point.row].green = 0;
 							job->array_in[offset_col+temp_point.col][offset_row+temp_point.row].blue = 0;
 
-
-
-
-
 							new_point.col = offset_col+temp_point.col;
 							new_point.row = offset_row+temp_point.row;
-
+							new_point.threshold = start_point->threshold;
 
 							//i will use this later to write out the width and height of the speckle
 							if(new_point.col > max_col)
@@ -251,9 +245,6 @@ void * flood(JOB_ARG *job)
 
 							enqueue(&search_queue,new_point);
 
-							//						printf("enqueued a new search point\n");
-
-
 						}
 					}
 				}
@@ -265,16 +256,6 @@ void * flood(JOB_ARG *job)
 	{
 		temp_point = dequeue(&flood_queue);
 
-// size of the speckle is written out as the green value
-		if(count < 765)
-		{
-			job->array_out[temp_point.col][temp_point.row].green = count/3;
-		}
-		else
-		{
-			job->array_out[temp_point.col][temp_point.row].green = 255;
-		}
-
 		//width of the speckle is written out as its red value
 		if(max_col-min_col < 256)
 		{
@@ -283,6 +264,16 @@ void * flood(JOB_ARG *job)
 		else
 		{
 			job->array_out[temp_point.col][temp_point.row].red = 255;
+		}
+
+// size of the speckle is written out as the green value
+		if(count < 765)
+		{
+			job->array_out[temp_point.col][temp_point.row].green = count/3;
+		}
+		else
+		{
+			job->array_out[temp_point.col][temp_point.row].green = 255;
 		}
 
 		//height of the speckle is written out as its blue value
@@ -296,5 +287,8 @@ void * flood(JOB_ARG *job)
 		}
 
 	}
+
+	return count;
+
 }
 #endif //FLOOD
