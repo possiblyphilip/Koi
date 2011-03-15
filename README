@@ -39,11 +39,20 @@ OR
 //drop Koi.exe into /usr/lib/gimp/2.0/plug-ins/
 
 ##########################################
-Using Koi in Gimp
+Using Koi in GIMP
 
-Koi is located under Filters>Misc>Koi
+open an image in GIMP.
 
-Koi will inspect the the selected image and produce layers highlighting modified regions.
+select the layer in the image you want to analyse.
+
+open Koi: Tools>Koi
+
+Check the box of the algorithm you want to run and adjust parameters if needed.
+
+Click OK to analyse the image.
+
+Text analysis of the image will be printed to a log file and Koi produce layers highlighting different features of the image in GIMP.
+
 ##########################################
 
 current screenshots

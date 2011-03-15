@@ -53,15 +53,15 @@ void * jpeg_highlighter_algorithm(JOB_ARG *job)
 
 
 		printf("saving jpeg at %f compression\n", jpeg_compress);
-		gimp_run_procedure("file-jpeg-save",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, job->image_id , GIMP_PDB_DRAWABLE, job->drawable->drawable_id, GIMP_PDB_STRING, "/tmp/koi_temp.jpg", GIMP_PDB_STRING, "temp", GIMP_PDB_FLOAT, jpeg_compress, GIMP_PDB_FLOAT, 0.0, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_STRING,"created with Koi", GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 1, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 1, GIMP_PDB_END);
-		printf("waiting for jpeg save\n");
-		sleep(1);
+		gimp_run_procedure("file-jpeg-save",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, job->image_id , GIMP_PDB_DRAWABLE, job->drawable->drawable_id, GIMP_PDB_STRING, "koi_temp.jpg", GIMP_PDB_STRING, "temp", GIMP_PDB_FLOAT, jpeg_compress, GIMP_PDB_FLOAT, 0.0, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_STRING,"created with Koi", GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 1, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 1, GIMP_PDB_END);
 		gimp_progress_set_text("waiting for jpeg save\n");
 		for(ii = 0; ii < SLEEP_TIME; ii++)
 		{
 			job->progress = ((float)ii/SLEEP_TIME) * 4;
 			sleep(1);
 		}
+
+
 
 		printf("saved jpeg\n");
 //		sleep(1);

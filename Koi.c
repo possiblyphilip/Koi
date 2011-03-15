@@ -362,6 +362,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 				job[ii].image.width = width;
 				job[ii].drawable = drawable;
 				job[ii].image_id = image_id;
+				job[ii].file_name = gimp_image_get_filename (image_id);
 
 				job[ii].thread = ii;
 				job[ii].progress = 0;

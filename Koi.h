@@ -68,7 +68,7 @@ typedef struct
 	int thread;
 	IMAGE image;
 	void *options;
-	char file_name[256];
+	gchar *file_name;
 }JOB_ARG;
 
 typedef struct

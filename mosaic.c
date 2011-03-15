@@ -219,7 +219,9 @@ void * mosaic_highlighter_analyze(JOB_ARG *job)
 	float top_left_filled = 0;
 	float bottom_left_filled = 0;
 
-	log_file = fopen("/tmp/koi_log.txt", "a");
+	printf("%s\n",job->file_name);
+
+	log_file = fopen("koi_log.txt", "a");
 
 	if(log_file == NULL)
 	{
