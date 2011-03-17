@@ -190,17 +190,8 @@ void * texture_highlighter_analyze(JOB_ARG *job)
 	int row;
 	int col;
 
-	FILE *log_file;
-
 	int temp = 0;
 
-	log_file = fopen("/tmp/koi_log.txt", "a");
-
-	if(log_file == NULL)
-	{
-		printf("failed to open /tmp/koi_log.txt\n");
-	}
-
 	//####################################
 	for (row = 0; row < job->image.height/2; row++)
 	{
@@ -214,15 +205,15 @@ void * texture_highlighter_analyze(JOB_ARG *job)
 	}
 	if(temp / 10000)
 	{
-		fprintf(log_file, "alot of texture loss in the top left - %d fuzzy pixels\n", temp);
+		print_log("alot of texture loss in the top left - %d fuzzy pixels\n", temp);
 	}
 	else if(temp > 1000)
 	{
-		fprintf(log_file, "some texture loss in the top left\n");
+		print_log("some texture loss in the top left\n");
 	}
 	else
 	{
-		fprintf(log_file, "Did not find any texture loss in the top left\n");
+		print_log("Did not find any texture loss in the top left\n");
 	}
 
 	//####################################
@@ -239,15 +230,15 @@ void * texture_highlighter_analyze(JOB_ARG *job)
 	}
 	if(temp / 10000)
 	{
-		fprintf(log_file, "alot of texture loss in the bottom left - %d fuzzy pixels\n", temp);
+		print_log("alot of texture loss in the bottom left - %d fuzzy pixels\n", temp);
 	}
 	else if(temp > 1000)
 	{
-		fprintf(log_file, "some texture loss in the bottom left\n");
+		print_log("some texture loss in the bottom left\n");
 	}
 	else
 	{
-		fprintf(log_file, "Did not find any texture loss in the bottom left\n");
+		print_log("Did not find any texture loss in the bottom left\n");
 	}
 	//####################################
 	temp = 0;
@@ -263,15 +254,15 @@ void * texture_highlighter_analyze(JOB_ARG *job)
 	}
 	if(temp / 10000)
 	{
-		fprintf(log_file, "alot of texture loss in the top right- %d fuzzy pixels\n", temp);
+		print_log("alot of texture loss in the top right- %d fuzzy pixels\n", temp);
 	}
 	else if(temp > 1000)
 	{
-		fprintf(log_file, "some texture loss in the top right\n");
+		print_log("some texture loss in the top right\n");
 	}
 	else
 	{
-		fprintf(log_file, "Did not find any texture loss in the top right\n");
+		print_log("Did not find any texture loss in the top right\n");
 	}
 
 	//####################################
@@ -288,20 +279,16 @@ void * texture_highlighter_analyze(JOB_ARG *job)
 	}
 	if(temp / 10000)
 	{
-		fprintf(log_file, "alot of texture loss in the bottom right - %d fuzzy pixels\n", temp);
+		print_log("alot of texture loss in the bottom right - %d fuzzy pixels\n", temp);
 	}
 	else if(temp > 1000)
 	{
-		fprintf(log_file, "some texture loss in the bottom right\n");
+		print_log("some texture loss in the bottom right\n");
 	}
 	else
 	{
-		fprintf(log_file, "Did not find any texture loss in the bottom right\n");
+		print_log("Did not find any texture loss in the bottom right\n");
 	}
-
-	fclose(log_file);
-
-
 
 }
 

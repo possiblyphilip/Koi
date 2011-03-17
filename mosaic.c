@@ -192,8 +192,6 @@ void * mosaic_highlighter_analyze(JOB_ARG *job)
 	int row;
 	int col;
 
-	FILE *log_file;
-
 	int top_right_red_max = 0;
 	int bottom_right_red_max = 0;
 	int top_left_red_max = 0;
@@ -218,16 +216,6 @@ void * mosaic_highlighter_analyze(JOB_ARG *job)
 	float bottom_right_filled = 0;
 	float top_left_filled = 0;
 	float bottom_left_filled = 0;
-
-	printf("%s\n",job->file_name);
-
-	log_file = fopen("koi_log.txt", "a");
-
-	if(log_file == NULL)
-	{
-		printf("failed to open /tmp/koi_log.txt\n");
-		return;
-	}
 
 	num_pixels = job->image.height * job->image.width;
 
@@ -329,14 +317,14 @@ void * mosaic_highlighter_analyze(JOB_ARG *job)
 	}
 
 
-	fprintf(log_file, "mosaic max contrast stats\n");
+	print_log("mosaic max contrast stats\n");
 
 
-	fprintf(log_file, "top left: red %d, green %d, blue %d\n", top_left_red_max,top_left_green_max,top_left_blue_max);
-	fprintf(log_file, "top right: red %d, green %d, blue %d\n", top_right_red_max,top_right_green_max,top_right_blue_max);
-	fprintf(log_file, "bottom left: red %d, green %d, blue %d\n", bottom_left_red_max,bottom_left_green_max,bottom_left_blue_max);
-	fprintf(log_file, "bottom right: red %d, green %d, blue %d\n", bottom_right_red_max,bottom_right_green_max,bottom_right_blue_max);
-	fprintf(log_file, "overall max\n");
+	print_log("top left: red %d, green %d, blue %d\n", top_left_red_max,top_left_green_max,top_left_blue_max);
+	print_log("top right: red %d, green %d, blue %d\n", top_right_red_max,top_right_green_max,top_right_blue_max);
+	print_log("bottom left: red %d, green %d, blue %d\n", bottom_left_red_max,bottom_left_green_max,bottom_left_blue_max);
+	print_log("bottom right: red %d, green %d, blue %d\n", bottom_right_red_max,bottom_right_green_max,bottom_right_blue_max);
+	print_log("overall max\n");
 
 	//must be a better way to do this
 	temp = top_left_red_max;
@@ -352,7 +340,7 @@ void * mosaic_highlighter_analyze(JOB_ARG *job)
 	{
 		temp = bottom_right_red_max;
 	}
-	fprintf(log_file, "red %d, ", temp);
+	print_log("red %d, ", temp);
 
 	temp = top_left_green_max;
 	if(top_right_green_max > temp)
@@ -367,7 +355,7 @@ void * mosaic_highlighter_analyze(JOB_ARG *job)
 	{
 		temp = bottom_right_green_max;
 	}
-	fprintf(log_file, "green %d, ", temp);
+	print_log("green %d, ", temp);
 
 	temp = top_left_blue_max;
 	if(top_right_blue_max > temp)
@@ -382,11 +370,7 @@ void * mosaic_highlighter_analyze(JOB_ARG *job)
 	{
 		temp = bottom_right_blue_max;
 	}
-	fprintf(log_file, "blue %d\n", temp);
-
-	fclose(log_file);
-
-
+	print_log("blue %d\n", temp);
 
 }
 

@@ -27,6 +27,7 @@
 #include <stdlib.h>
 
 #include "gui.h"
+#include "log.c"
 
 static void query (void);
 static void run (const char *name, int nparams, const GimpParam *param,  int *nreturn_vals, GimpParam **return_vals);

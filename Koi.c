@@ -46,6 +46,8 @@
 #include "mosaic.h"
 #include "mosaic.c"
 
+#include "log.c"
+
 
 MAIN()
 
@@ -407,21 +409,37 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 			//heres where I am going to look at the algorithm output and decide what to write into the log file
 
 			//###########################33
-//
+//this way you can do lots of writes and linux will buffer them for you
 
-			printf("doing %s analyze\n",plugin[jj]->name);
-			thread_return_value[0] = pthread_create((pthread_t*) &thread_id[0], NULL, (void *(*)(void *))plugin[jj]->analyze, (void*)&job[0]);
-			if (thread_return_value[0] != 0)
+
+
+			if(open_log(job[0].file_name))
 			{
-				printf("thread %s failed to start\n",plugin[jj]->name);
-				//something bad happened
+
+				printf("doing %s analyze\n",plugin[jj]->name);
+				thread_return_value[0] = pthread_create((pthread_t*) &thread_id[0], NULL, (void *(*)(void *))plugin[jj]->analyze, (void*)&job[0]);
+				if (thread_return_value[0] != 0)
+				{
+					printf("thread %s failed to start\n",plugin[jj]->name);
+					//something bad happened
+				}
+
+				thread_return_value[0] = pthread_join(thread_id[0], NULL);
+				if (thread_return_value[0] != 0)
+				{
+					printf("thread %s returned %d badness\n",plugin[jj]->name, thread_return_value[0]);
+					//something bad happened
+				}
+
+				close_log();
+			}
+			else
+			{
+				printf("log failed to open\n");
 			}
 
-
-//			plugin[jj]->analyze(job[0]);
-
-
 			//I dont think i need the pthread join because i dont care if its still working when the next one kicks off
+
 	//###########################33
 
 //			drawable->drawable_id = gimp_image_get_active_drawable(image_id);

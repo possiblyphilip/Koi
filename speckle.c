@@ -210,8 +210,6 @@ void * speckle_highlighter_analyze(JOB_ARG *job)
 	int row;
 	int col;
 
-	FILE *log_file;
-
 	long long top_right_height = 0;
 	long long bottom_right_height = 0;
 	long long top_left_height = 0;
@@ -231,14 +229,6 @@ void * speckle_highlighter_analyze(JOB_ARG *job)
 	float bottom_right_filled = 0;
 	float top_left_filled = 0;
 	float bottom_left_filled = 0;
-
-	log_file = fopen("/tmp/koi_log.txt", "a");
-
-	if(log_file == NULL)
-	{
-		printf("failed to open /tmp/koi_log.txt\n");
-		return;
-	}
 
 	num_pixels = job->image.height * job->image.width;
 
@@ -302,26 +292,21 @@ void * speckle_highlighter_analyze(JOB_ARG *job)
 		}
 	}
 
+	print_log("Speckle stats\n");
 
-	fprintf(log_file, "Speckle stats\n");
+	print_log("avg speckle size %f\n\n", (size/(float)num_pixels) );
 
-	fprintf(log_file, "avg speckle size %f\n\n", (size/(float)num_pixels) );
+	print_log("top left avg speckle width %f\n", top_left_width / top_left_filled );
+	print_log("top left avg speckle height %f\n\n", top_left_height / top_left_filled );
 
-	fprintf(log_file, "top left avg speckle width %f\n", top_left_width / top_left_filled );
-	fprintf(log_file, "top left avg speckle height %f\n\n", top_left_height / top_left_filled );
+	print_log("top right avg speckle width %f\n", top_right_width / top_right_filled );
+	print_log("top right avg speckle height %f\n\n", top_right_height / top_right_filled );
 
-	fprintf(log_file, "top right avg speckle width %f\n", top_right_width / top_right_filled );
-	fprintf(log_file, "top right avg speckle height %f\n\n", top_right_height / top_right_filled );
+	print_log("bottom left avg speckle width %f\n", bottom_left_width / bottom_left_filled );
+	print_log("bottom left avg speckle height %f\n\n", bottom_left_height / bottom_left_filled );
 
-	fprintf(log_file, "bottom left avg speckle width %f\n", bottom_left_width / bottom_left_filled );
-	fprintf(log_file, "bottom left avg speckle height %f\n\n", bottom_left_height / bottom_left_filled );
-
-	fprintf(log_file, "bottom right avg speckle width %f\n", bottom_right_width / bottom_right_filled );
-	fprintf(log_file, "bottom right avg speckle height %f\n\n", bottom_right_height / bottom_right_filled );
-
-
-	fclose(log_file);
-
+	print_log("bottom right avg speckle width %f\n", bottom_right_width / bottom_right_filled );
+	print_log("bottom right avg speckle height %f\n\n", bottom_right_height / bottom_right_filled );
 
 
 }

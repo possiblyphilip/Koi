@@ -253,8 +253,6 @@ void * grain_highlighter_analyze(JOB_ARG *job)
 	int row;
 	int col;
 
-	FILE *log_file;
-
 	int temp = 0;
 
 	for (row = 0; row < job->image.height; row++)
@@ -265,16 +263,7 @@ void * grain_highlighter_analyze(JOB_ARG *job)
 		}
 	}
 
-	log_file = fopen("/tmp/koi_log.txt", "a");
-
-	if(log_file == NULL)
-	{
-		printf("failed to open /tmp/koi_log.txt\n");
-	}
-
-	fprintf(log_file, "dont know what to do with the grain just yet\n", temp);
-
-	fclose(log_file);
+	print_log("dont know what to do with the grain just yet\n", temp);
 
 }
 
