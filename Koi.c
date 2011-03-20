@@ -51,7 +51,7 @@
 
 MAIN()
 
-		static void query (void)
+static void query (void)
 {
 	static GimpParamDef args[] =
 	{
@@ -60,12 +60,12 @@ MAIN()
 			"run-mode",
 			"Run mode"
 		},
-{
+		{
 			GIMP_PDB_IMAGE,
 			"image",
 			"Input image"
 		},
-{
+		{
 			GIMP_PDB_DRAWABLE,
 			"drawable",
 			"Input drawable"
@@ -90,6 +90,7 @@ MAIN()
 
 static void run (const char *name, int nparams, const GimpParam *param,  int *nreturn_vals, GimpParam **return_vals)
 {
+	int ii;
 	static GimpParam  values[1];
 	GimpPDBStatusType status = GIMP_PDB_SUCCESS;
 	GimpRunMode       run_mode;
@@ -109,6 +110,7 @@ static void run (const char *name, int nparams, const GimpParam *param,  int *nr
 	/*  Get the specified drawable  */
 	drawable = gimp_drawable_get (param[2].data.d_drawable);
 
+printf("@@@@@@@@@@@@@@@@@@ doing run switch\n");
 
 	switch (run_mode)
 	{
@@ -118,8 +120,6 @@ static void run (const char *name, int nparams, const GimpParam *param,  int *nr
 		//			gimp_get_data ("plug-in-Koi", &gui_options);
 
 
-		//it still displays this if i hit the cancel button
-		//thats because it either runs or fails there is no "canceled" state
 		/* Display the dialog */
 		if (! koi_dialog (drawable))
 		{
@@ -129,10 +129,14 @@ static void run (const char *name, int nparams, const GimpParam *param,  int *nr
 		break;
 		//i need to work on this area for non interactive running
 	case GIMP_RUN_NONINTERACTIVE:
-		if (nparams != 4)
-			status = GIMP_PDB_CALLING_ERROR;
+//		if (nparams != 4)
+//			status = GIMP_PDB_CALLING_ERROR;	
+
 		if (status == GIMP_PDB_SUCCESS)
-			//	    gui_options.radius = param[3].data.d_int32;
+			//this is where I need to suck in the args and parse them into something I can use...
+
+			printf("gimp pdb success\n");
+
 			break;
 
 	case GIMP_RUN_WITH_LAST_VALS:
@@ -209,7 +213,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 		gimp_preview_get_size (preview, &width, &height);
 		x2 = start_colum + width;
 		y2 = start_row + height;
-//		threads = 1;
+//		NUM_THREADS = 1;
 	}
 	else
 	{
@@ -218,8 +222,6 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 		width = x2 - start_colum;
 		height = y2 - start_row;
 		//maybe this will add an alpha channel to the original so that the others have one ...
-
-
 	}
 
 	if(width < 10 || height < 10)
@@ -312,9 +314,11 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 				}
 
 
-			gimp_pixel_rgn_init (&rgn_out, drawable,  start_colum, start_row, width, height, preview == NULL, TRUE);
+//			gimp_pixel_rgn_init (&rgn_out, drawable,  start_colum, start_row, width, height, preview == NULL, TRUE);
 
 			image_id = gimp_drawable_get_image(drawable->drawable_id);
+
+			printf("drawable ID before run %d\n",drawable->drawable_id);
 
 			//all this is to make a copy of the bottom layer and stuffs it into another layer
 			//for processing so i dont mess up the original image
@@ -330,28 +334,39 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 			//set the layer i want to the bottom most layer
 			layer = layer_array[num_layers-1];
 
-			//make a copy of the bottom most layer									
-			new_layer = gimp_layer_copy(layer);
 
-//			new_layer = gimp_layer_new (image_id, plugin[jj]->name,width, height,GIMP_RGB_IMAGE,100.0,GIMP_NORMAL_MODE);
-
-//			new_layer = gimp_layer_new_from_visible(image_id,image_id,plugin[jj]->name);
-
-			//Add the new layer to this image as the top layer
-			if (gimp_image_add_layer(image_id, new_layer, 0) != TRUE)
+			if(!preview)
 			{
-				printf("failed to create layer\n");
-				return;
-			}
-			//set the drawable to the top layer that we created for processing in
-			drawable->drawable_id = gimp_image_get_active_drawable(image_id);
+				//make a copy of the bottom most layer
+				new_layer = gimp_layer_copy(layer);
 
-			gimp_drawable_set_name (drawable->drawable_id, plugin[jj]->name);
+
+				//			new_layer = gimp_layer_new (image_id, plugin[jj]->name,width, height,GIMP_RGB_IMAGE,100.0,GIMP_NORMAL_MODE);
+
+				//			new_layer = gimp_layer_new_from_visible(image_id,image_id,plugin[jj]->name);
+
+				//Add the new layer to this image as the top layer
+				if (gimp_image_add_layer(image_id, new_layer, 0) != TRUE)
+				{
+					printf("failed to create layer\n");
+					return;
+				}
+
+				//set the drawable to the top layer that we created for processing in
+				drawable->drawable_id = gimp_image_get_active_drawable(image_id);
+
+				gimp_drawable_set_name (drawable->drawable_id, plugin[jj]->name);
+			}
+			else
+			{
+				NUM_THREADS = 1;
+			}
+
 
 			printf("running %s\n",plugin[jj]->name);
 			gimp_progress_set_text("running\n");
 
-			//so i kick off a few threads for each algorithm
+			//so i kick off a few NUM_THREADS for each algorithm
 			for(ii = 0; ii < NUM_THREADS; ii++)
 			{
 				job[ii].array_in = in_array;
@@ -365,7 +380,6 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 				job[ii].drawable = drawable;
 				job[ii].image_id = image_id;
 				job[ii].file_name = gimp_image_get_filename (image_id);
-
 				job[ii].thread = ii;
 				job[ii].progress = 0;
 
@@ -395,7 +409,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 				usleep(250000);
 //				sleep(1);
 			}
-			//all the threads are allready done at this point but i wrap them up here
+			//all the NUM_THREADS are allready done at this point but i wrap them up here
 			for(ii = 0; ii < NUM_THREADS; ii++)
 			{
 				thread_return_value[ii] = pthread_join(thread_id[ii], NULL);
@@ -412,38 +426,45 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 //this way you can do lots of writes and linux will buffer them for you
 
 
-
-			if(open_log(job[0].file_name))
+			if(!preview)
 			{
-
-				printf("doing %s analyze\n",plugin[jj]->name);
-				thread_return_value[0] = pthread_create((pthread_t*) &thread_id[0], NULL, (void *(*)(void *))plugin[jj]->analyze, (void*)&job[0]);
-				if (thread_return_value[0] != 0)
+				if(open_log(job[0].file_name))
 				{
-					printf("thread %s failed to start\n",plugin[jj]->name);
-					//something bad happened
-				}
 
-				thread_return_value[0] = pthread_join(thread_id[0], NULL);
-				if (thread_return_value[0] != 0)
+					printf("doing %s analyze\n",plugin[jj]->name);
+					thread_return_value[0] = pthread_create((pthread_t*) &thread_id[0], NULL, (void *(*)(void *))plugin[jj]->analyze, (void*)&job[0]);
+					if (thread_return_value[0] != 0)
+					{
+						printf("thread %s failed to start\n",plugin[jj]->name);
+						//something bad happened
+					}
+
+					thread_return_value[0] = pthread_join(thread_id[0], NULL);
+					if (thread_return_value[0] != 0)
+					{
+						printf("thread %s returned %d badness\n",plugin[jj]->name, thread_return_value[0]);
+						//something bad happened
+					}
+
+					close_log();
+				}
+				else
 				{
-					printf("thread %s returned %d badness\n",plugin[jj]->name, thread_return_value[0]);
-					//something bad happened
+					printf("log failed to open\n");
 				}
-
-				close_log();
 			}
-			else
-			{
-				printf("log failed to open\n");
-			}
-
-			//I dont think i need the pthread join because i dont care if its still working when the next one kicks off
 
 	//###########################33
 
-//			drawable->drawable_id = gimp_image_get_active_drawable(image_id);
-//			gimp_pixel_rgn_init (&rgn_out, drawable,  start_colum, start_row, width, height, preview == NULL, TRUE);
+			printf("drawable ID after run %d\n",drawable->drawable_id);
+
+			//set the drawable to the top layer that we created for processing in
+
+
+			drawable->drawable_id = gimp_image_get_active_drawable(image_id);
+			gimp_pixel_rgn_init (&rgn_out, drawable,  start_colum, start_row, width, height, preview == NULL, TRUE);
+
+			printf("drawable ID after reload %d\n",drawable->drawable_id);
 
 			// write the array back to the out image here
 			printf("exporting Koi array\n");
@@ -459,8 +480,16 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 						pixel[2] = out_array[col][row].blue;
 
 						gimp_pixel_rgn_set_pixel (&rgn_out, pixel,  start_colum+col, start_row+row);
+
+
+
 					}
 				}
+
+				/*  Update the modified region */
+
+				gimp_drawable_preview_draw_region (GIMP_DRAWABLE_PREVIEW (preview),  &rgn_out);
+
 			}
 			else
 			{
@@ -484,27 +513,30 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 					gimp_progress_update ((gdouble) (row / height));
 					}
 				}
-printf("flushing drawable\n");
+
+
+
+				printf("flushing drawable\n");
 				gimp_drawable_flush (drawable);
 				printf("merge shadow\n");
 				gimp_drawable_merge_shadow (drawable->drawable_id, TRUE);
 				printf("drawable update\n");
 				gimp_drawable_update (drawable->drawable_id, start_colum, start_row, width, height);
 
+
+
 			}
 		}
 	}
 
-	printf("freeing pixel arrays\n");
+
 	free_pixel_array(hidden_array,width);
 	free_pixel_array(in_array,width);
 	free_pixel_array(out_array,width);
 
-	/*  Update the modified region */
-	if (preview)
-	{
-		gimp_drawable_preview_draw_region (GIMP_DRAWABLE_PREVIEW (preview),  &rgn_out);
-	}
+	printf("freeed pixel arrays\n");
+
+
 
 	printf("Koi done\n");
 

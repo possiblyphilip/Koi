@@ -19,7 +19,7 @@
 #include "Koi.h"
 #include"jpeg_compress.h"
 
-gfloat jpeg_compress = .99;
+float jpeg_compress = .99;
 int jpeg_threshold = 60;
 
 #define SLEEP_TIME 5
@@ -33,9 +33,8 @@ void * jpeg_highlighter_algorithm(JOB_ARG *job)
 {
 	GimpRunMode mode = GIMP_RUN_NONINTERACTIVE;
 	int num_return_vals;
-	gchar file_name[] = "/tmp/koi_temp.jpg";
 	gint32 layer, temp_layer;
-
+	char temp_file_name[256];
 	int ii;
 
 	printf("inside %s thread %d\n", jpeg_plugin.name, job->thread);
@@ -44,17 +43,20 @@ void * jpeg_highlighter_algorithm(JOB_ARG *job)
 	if(job->thread == 0)
 	{
 
+		sleep(1);
 
-//		file_name = gimp_image_get_filename (job->image_id);
+
+		sprintf(temp_file_name,"%stemp.jpg",job->file_name);
 
 
 //		mkstemp(file_name);
-//		printf("using filename %s\n", file_name);
+		printf("using filename %s\n", temp_file_name);
 
 
 		printf("saving jpeg at %f compression\n", jpeg_compress);
-		gimp_run_procedure("file-jpeg-save",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, job->image_id , GIMP_PDB_DRAWABLE, job->drawable->drawable_id, GIMP_PDB_STRING, "koi_temp.jpg", GIMP_PDB_STRING, "temp", GIMP_PDB_FLOAT, jpeg_compress, GIMP_PDB_FLOAT, 0.0, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_STRING,"created with Koi", GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 1, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 1, GIMP_PDB_END);
 		gimp_progress_set_text("waiting for jpeg save\n");
+
+		gimp_run_procedure("file-jpeg-save",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, job->image_id , GIMP_PDB_DRAWABLE, job->drawable->drawable_id, GIMP_PDB_STRING, temp_file_name, GIMP_PDB_STRING, "temp", GIMP_PDB_FLOAT, jpeg_compress, GIMP_PDB_FLOAT, 0.0, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_STRING,"created with Koi", GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 1, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 1, GIMP_PDB_END);
 		for(ii = 0; ii < SLEEP_TIME; ii++)
 		{
 			job->progress = ((float)ii/SLEEP_TIME) * 4;
@@ -66,7 +68,7 @@ void * jpeg_highlighter_algorithm(JOB_ARG *job)
 		printf("saved jpeg\n");
 //		sleep(1);
 		// reload our saved image and suck a layer off of it to subtract against or original image
-		temp_layer = gimp_file_load_layer(mode, job->image_id, "/tmp/koi_temp.jpg");
+		temp_layer = gimp_file_load_layer(mode, job->image_id, temp_file_name);
 
 		printf("loaded new layer %d in image %d\n", temp_layer, job->image_id);
 
@@ -118,6 +120,8 @@ void * jpeg_highlighter_algorithm(JOB_ARG *job)
 		printf("got lock\n");
 		jpeg_wait = 0;
 		pthread_mutex_unlock(&jpeg_mutex);
+
+		printf("drawable ID after jpeg %d\n",gimp_image_get_active_drawable(job->image_id));
 
 	}
 	else

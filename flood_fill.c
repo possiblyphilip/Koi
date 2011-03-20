@@ -18,8 +18,6 @@
 
 
 #include "Koi.h"
-
-#include "queue.c"
 #include <assert.h>
 
 #ifndef FLOOD

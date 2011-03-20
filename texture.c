@@ -36,7 +36,16 @@ void * texture_highlighter_algorithm(JOB_ARG *job)
 
 	printf("texture threshold = %f\n", texture_threshold);
 
-
+	//black out the array
+	for (row = 0; row < job->height; row++)
+	{
+		for (col = 0; col < job->width+(2*block_size); col++)
+		{
+			temp_array[col][row].red = 0;
+			temp_array[col][row].green = 0;
+			temp_array[col][row].blue = 0;
+		}
+	}
 
 
 	//edge find the image

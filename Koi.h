@@ -89,6 +89,6 @@ static gboolean koi_dialog (GimpDrawable *drawable);
 void allocate_pixel_array(PIXEL ***array, int width, int height);
 void free_pixel_array(PIXEL **array, int width);
 
-#define NUM_THREADS 4
+int NUM_THREADS = 4;
 
 #endif // KOI_H

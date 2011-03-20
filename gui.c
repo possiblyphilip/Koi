@@ -62,9 +62,9 @@ static gboolean koi_dialog (GimpDrawable *drawable)
 	printf("############## GUI init ##############\n");
 
 
-	gimp_ui_init ("koi rebuild", FALSE);
+	gimp_ui_init ("Koi", FALSE);
 
-	dialog = gimp_dialog_new ("Koi rebuld", "Koi rebuild", NULL, 0, gimp_standard_help_func, "Koi rebuild", GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,  GTK_STOCK_OK, GTK_RESPONSE_OK, NULL);
+	dialog = gimp_dialog_new ("Koi", "Koi", NULL, 0, gimp_standard_help_func, "Koi", GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,  GTK_STOCK_OK, GTK_RESPONSE_OK, NULL);
 
 	//create plugins and link them into the list
 	create_clone_plugin();
