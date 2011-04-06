@@ -18,7 +18,10 @@
 Project Goal Statement
 Koi will be a GIMP plugin able to identify manipulation artifacts in an image, highlight modified areas and return a percent chance of forgery by June 2011. 
 ##########################################
-Installing Koi on Ubuntu 
+Installing Koi on Ubuntu with GIMP 2.6
+
+source: http://github.com/possiblyphilip/Koi
+(prebuilt binary also available)
 
 //for local Koi install
 sudo apt-get install libgimp2.0-dev
@@ -26,7 +29,9 @@ sudo apt-get install libgimp2.0-dev
 //while inside Koi source directory 
 gimptool-2.0 --install Koi.c 
 
-OR //for global Koi install
+OR 
+
+//for global Koi install
 sudo apt-get install libgimp2.0-dev
 //extract Koi source into a directory 
 //while inside Koi source directory 
@@ -61,7 +66,8 @@ http://picasaweb.google.com/possibly.philip/koi
 
 ##########################################
 
-Koi is a system that can identify and highlight image manipulation artifacts. In a world of digital media, every image is suspect of forgery. Koi can put to rest the fear publishers, news agencies , insurance agencies and anyone else who may depend on an image later found to be digitally edited. Front page news has had its share of embarrassing forgeries published. With Koi in place an image can be properly inspected for signs of forgery before it is published. Some companies have forged images for public relations campaigns which news media picked up, individuals fake images for media attention or to defraud insurance companies. Images “photoshopped” for fun have ended up being the center of news media attention only to be discovered as fakes.. Modern companies have started using social networking site content in their employee hiring process. Knowing if an image has been altered could provide employers with an edge in hiring the best employees possible. With digital images becoming ever more popular police and other law enforcement agencies need to be able to verify whether images have been altered for use in court as evidence. With forged images rampant, publishing and verifying content is a huge edge in the information age. Whenever an image is digitally altered the software doing the modification changes the original image in ways that may not be detectable to the unaided eye. By applying filters, running transforms and other proprietary Koi algorithms on an image the modifications can be highlighted and exposed. Every contact leaves a trace – Koi can find it.
+Koi is a system that can identify and highlight image manipulation artifacts. In a world of digital media, every image is suspect of forgery. Koi can put to rest the fear publishers, news agencies , insurance agencies and anyone else who may depend on digital images. Front page news has had its share of embarrassing forgeries published. Some companies have forged images for public relations campaigns which news media picked up, individuals fake images for media attention or to defraud insurance companies. Images “photoshopped” for fun have ended up being the center of news media attention only to be discovered as fakes. With Koi in place an image can be properly inspected for signs of forgery before it is published. With digital images becoming ever more popular, police and other law enforcement agencies need to be able to verify whether images have been altered for use in court as evidence. With forgery running rampant, publishing verified content is a huge edge in the information age. Whenever an image is digitally altered, the software doing the modification changes the original image in ways that may not be detectable to the unaided eye. By applying filters, running transforms and other proprietary Koi algorithms on an image, the modifications can be highlighted and exposed. Every contact leaves a trace – Koi can find it.
+
 
 
 
