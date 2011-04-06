@@ -54,7 +54,6 @@ int open_log(char *file_name)
 	}
 	else
 	{
-		fprintf(log_file,"test\n");
 		return 1;
 	}
 

@@ -99,17 +99,16 @@ void * jpeg_highlighter_algorithm(JOB_ARG *job)
 
 		printf("merged layers\n");
 		job->drawable->drawable_id = gimp_image_get_active_drawable(job->image_id);
-		printf("get active drawable\n");
-		gimp_brightness_contrast(job->drawable->drawable_id, 126, 125);
-		printf("adjust contrast\n");
-//		gimp_run_procedure("plug-in-gauss",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, 0 , GIMP_PDB_DRAWABLE, job->drawable->drawable_id, GIMP_PDB_FLOAT, 20.0, GIMP_PDB_FLOAT, 20.0, GIMP_PDB_INT32, 1, GIMP_PDB_END);
-//		printf("blur\n");
-		printf("Jpeg threshold: %d\n",jpeg_threshold);
-
-		//I should have this subtract against an edge detection layer and then threshold it
-
-		gimp_threshold(job->drawable->drawable_id, jpeg_threshold,255 );
-		printf("threshold\n");
+//		printf("get active drawable\n");
+//		gimp_brightness_contrast(job->drawable->drawable_id, 126, 125);
+//		printf("adjust contrast\n");
+//
+//		printf("Jpeg threshold: %d\n",jpeg_threshold);
+//
+//		//I should have this subtract against an edge detection layer and then threshold it
+//
+//		gimp_threshold(job->drawable->drawable_id, jpeg_threshold,255 );
+//		printf("threshold\n");
 
 		sleep(1);
 

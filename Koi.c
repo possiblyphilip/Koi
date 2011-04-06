@@ -132,6 +132,8 @@ printf("@@@@@@@@@@@@@@@@@@ doing run switch\n");
 //		if (nparams != 4)
 //			status = GIMP_PDB_CALLING_ERROR;	
 
+		printf("Koi alive!\n");
+
 		if (status == GIMP_PDB_SUCCESS)
 			//this is where I need to suck in the args and parse them into something I can use...
 

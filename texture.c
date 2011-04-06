@@ -24,7 +24,7 @@ gfloat texture_threshold = 15;
 
 void * texture_highlighter_algorithm(JOB_ARG *job)
 {
-	int block_size = 16;
+	int block_size = 8;
 	int temp;
 	int row, col, block_row,block_col;
 	int max_col;
@@ -50,6 +50,15 @@ void * texture_highlighter_algorithm(JOB_ARG *job)
 
 	//edge find the image
 		laplace(job);
+	//#########################3
+
+//		free_pixel_array(temp_array,job->width*2);
+//
+//		job->progress = 1;
+//
+//		return NULL;
+
+		//#########################3
 
 		//this snipit should let the colums blend in the middle of the image without writing over the edge of the image
 		//basically this allows each thread to read the other threads data so there are not gaps between

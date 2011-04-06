@@ -133,6 +133,7 @@ void * grain_highlighter_algorithm(JOB_ARG *job)
 					best_angle = angle;
 				}
 			}
+			//this looks down the line to see if it is the brightest in the path
 			//write back the best line in only if it is brighter than the other lines it is crossing
 			for(ii = 0; ii < radius; ii++)
 			{
@@ -158,19 +159,17 @@ void * grain_highlighter_algorithm(JOB_ARG *job)
 			}
 
 
-			if(highest/radius > 70)
+			if(highest/radius > 40)
 			{
 				for(ii = 0; ii < radius; ii++)
 				{
 					col_offset = (ii*cos(best_angle));
 					row_offset = (ii*sin(best_angle));
-					//		job->array_out[col+col_offset][row+row_offset].red = 230;
-					//		job->array_out[col+col_offset][row+row_offset].green = 230;
-					//		job->array_out[col+col_offset][row+row_offset].blue = 50;
 
-					job->array_out[col+col_offset][row+row_offset].red = (best_angle/(3.14))*255;
-					job->array_out[col+col_offset][row+row_offset].green = (best_angle/(3.14))*255;
-					job->array_out[col+col_offset][row+row_offset].blue = (best_angle/(3.14))*255;
+					//the 1+ is to get rid of the gaps in the histogram when where virticle lines happened
+					job->array_out[col+col_offset][row+row_offset].red = highest/radius;
+					job->array_out[col+col_offset][row+row_offset].green = 1+(best_angle/(3.14))*254;
+					job->array_out[col+col_offset][row+row_offset].blue = 1+(best_angle/(3.14))*254;
 
 				}
 			}

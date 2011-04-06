@@ -20,23 +20,21 @@ Koi will be a GIMP plugin able to identify manipulation artifacts in an image, h
 ##########################################
 Installing Koi on Ubuntu 
 
-sudo apt-get install libgimp2.0-dev
-
-//extract Koi source into a directory 
-
-//while inside Koi source directory 
-
 //for local Koi install
+sudo apt-get install libgimp2.0-dev
+//extract Koi source into a directory 
+//while inside Koi source directory 
 gimptool-2.0 --install Koi.c 
 
-OR 
-
-//for global Koi install
+OR //for global Koi install
+sudo apt-get install libgimp2.0-dev
+//extract Koi source into a directory 
+//while inside Koi source directory 
 sudo gimptool-2.0 --install-admin Koi.c
 
 OR
 
-//drop Koi.exe into /usr/lib/gimp/2.0/plug-ins/
+//copy Koi.exe into /usr/lib/gimp/2.0/plug-ins/
 
 ##########################################
 Using Koi in GIMP
@@ -47,11 +45,13 @@ select the layer in the image you want to analyse.
 
 open Koi: Tools>Koi
 
-Check the box of the algorithm you want to run and adjust parameters if needed.
+Check the box corisponding to the algorithm(s) you want to run.
+Adjust parameters if needed.
 
-Click OK to analyse the image.
+Click 'OK' to analyse the image.
 
-Text analysis of the image will be printed to a log file and Koi produce layers highlighting different features of the image in GIMP.
+Text analysis of the image will be printed to a log file in the directory where the image is stored.
+Koi will produce layers highlighting different features of the image in GIMP.
 
 ##########################################
 
