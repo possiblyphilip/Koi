@@ -42,6 +42,7 @@ static gboolean koi_dialog (GimpDrawable *drawable)
 	GtkWidget *label;
 
 	GtkWidget *thread_count_spinbutton;
+	GtkObject *thread_count_spinbutton_value;
 	GtkWidget *notebook;
 
 	int ii;
@@ -131,8 +132,11 @@ static gboolean koi_dialog (GimpDrawable *drawable)
 
 	label = gtk_label_new ("Thread count");
 	gtk_widget_show (label);
-
 	gtk_box_pack_start (GTK_BOX (vbox), label, FALSE, FALSE, 0);
+
+	thread_count_spinbutton = gimp_spin_button_new (&thread_count_spinbutton_value, NUM_THREADS, 0, 16, 1, 1, 0, 1, 0);
+	gtk_widget_show (thread_count_spinbutton);
+	gtk_box_pack_start (GTK_BOX (vbox), thread_count_spinbutton, FALSE, FALSE, 0);
 
   //  thread_count_spinbutton = gimp_spin_button_new (&thread_count_spinbutton_value, gui_options.threads, 1, 8, 1, 1, 1, 1, 0);
  //   gtk_box_pack_start (GTK_BOX (vbox), thread_count_spinbutton, FALSE, FALSE, 0);
@@ -146,7 +150,7 @@ static gboolean koi_dialog (GimpDrawable *drawable)
 
 //	g_signal_connect (clone_check_button, "clicked", G_CALLBACK (cb_clone_check_button), &gui_options);
 
-//	g_signal_connect (block_size_spinbutton_value, "value_changed", G_CALLBACK (gimp_int_adjustment_update), &gui_options.threads);
+	g_signal_connect (thread_count_spinbutton_value, "value_changed", G_CALLBACK (gimp_int_adjustment_update), &NUM_THREADS);
 
 	gtk_widget_show (dialog);
 
