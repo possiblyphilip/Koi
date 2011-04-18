@@ -77,14 +77,14 @@ static gboolean koi_dialog (GimpDrawable *drawable)
 	create_texture_plugin();
 	plugin[2] = &texture_plugin;
 
-	create_jpeg_plugin();
-	plugin[3] = &jpeg_plugin;
-
 	create_speckle_plugin();
-	plugin[4] = &speckle_plugin;
+	plugin[3] = &speckle_plugin;
 
 	create_mosaic_plugin();
-	plugin[5] = &mosaic_plugin;
+	plugin[4] = &mosaic_plugin;
+
+	create_jpeg_plugin();
+	plugin[5] = &jpeg_plugin;
 
 	main_vbox = gtk_vbox_new (FALSE, 6);
 	gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), main_vbox);

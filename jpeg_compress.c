@@ -22,7 +22,7 @@
 float jpeg_compress = .99;
 int jpeg_threshold = 60;
 
-#define SLEEP_TIME 5
+#define SLEEP_TIME 2
 
 pthread_cond_t      jpeg_cond  = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t     jpeg_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -215,20 +215,95 @@ GtkWidget * create_jpeg_gui()
 
 void * jpeg_highlighter_analyze(JOB_ARG *job)
 {
+	int ii, jj, kk;
 	int row;
 	int col;
+	union
+	{
+		guchar pixel[4];
+		unsigned int value;
+	} stuff;
 
+	gint32 layer_id;
 	int temp = 0;
+	int *histogram;
+
+	histogram = (int*)malloc(sizeof(int)*255*255*255);
+//
+//	GimpRunMode mode = GIMP_RUN_NONINTERACTIVE;
+//	PIXEL **temp_array;
+GimpPixelRgn rgn_in;
+
+	printf("in analizer\n");
+
+	job->drawable->drawable_id = gimp_image_get_active_drawable(job->image_id);
+
+	layer_id = gimp_image_get_active_layer(job->image_id);
+
+//	printf("adding alpha channel\n");
+//	gimp_layer_add_alpha(layer_id);
+//
+//
+////	if(! gimp_drawable_has_alpha (layer_id))
+////	{
+////		 /* some filtermacros do not work with layer that do not have an alpha channel
+////		 * and cause gimp to fail on attempt to call gimp_pixel_rgn_init
+////		  * with both dirty and shadow flag set to TRUE
+////		  * in this situation GIMP displays the error message
+////		  *    "expected tile ack and received: 5"
+////		  *    and causes the called plug-in to exit immediate without success
+////		  * Therfore always add an alpha channel before calling a filtermacro.
+////		  */
+////		  gimp_layer_add_alpha(layer_id);
+////		  printf("adding alpha channel\n");
+////   }
+
+
+	printf("zeroed array\n");
+
+	for(ii = 0; ii < 255*255*255; ii++)
+	{
+		histogram[ii] = 0;
+	}
+
+	gimp_pixel_rgn_init(&rgn_in, job->drawable, job->start_colum, job->start_row, job->image.width, job->image.height, FALSE, FALSE);
 
 	for (row = 0; row < job->image.height; row++)
 	{
 		for (col = 0; col < job->image.width; col++)
 		{
-			temp += job->array_out[col][row].red;
+			gimp_pixel_rgn_get_pixel (&rgn_in, stuff.pixel, col,row);
+
+			job->array_out[col][row].red = stuff.pixel[0];
+			job->array_out[col][row].green = stuff.pixel[1];
+			job->array_out[col][row].blue = stuff.pixel[2];
+
+			stuff.pixel[3] = 0;
+//			printf("%d ", stuff.value);
+//			printf("%x %x %x %x\n", stuff.pixel[0], stuff.pixel[1], stuff.pixel[2], stuff.value);
+			histogram[stuff.value]++;
+
+		}
+
+		if (row % 50 == 0)
+		{
+			gimp_progress_update ((gdouble) row / job->image.height);
+
 		}
 	}
 
-	print_log("dont know how to analyze jpeg output currently\n");
+	for(ii = 0; ii < 255*255*255; ii++)
+	{	
+		if(histogram[ii] != 0)
+		{
+			temp++;
+		}
+	}
+
+	free(histogram);
+
+	print_log("unique colors:%d\n",temp);
+//	print_log("dont know how to analyze jpeg output currently\n");
 
 }
 

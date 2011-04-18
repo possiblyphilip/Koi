@@ -182,6 +182,8 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
 	float temp;
 
+
+
 	pthread_t thread_id[NUM_THREADS];
 	int thread_return_value[NUM_THREADS];
 
@@ -205,7 +207,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 	}
 
 	/* Allocate a big enough tile cache */
-	gimp_tile_cache_ntiles (2 * (drawable->width / gimp_tile_width () + 1));
+	gimp_tile_cache_ntiles (4 * (drawable->width / gimp_tile_width () + 1));
 
 	/* Gets upper left and lower right coordinates,
    * and layers number in the image */
@@ -427,8 +429,8 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 			//###########################33
 //this way you can do lots of writes and linux will buffer them for you
 
-
 			if(!preview)
+	//		if(0)
 			{
 				if(open_log(job[0].file_name))
 				{
@@ -494,6 +496,7 @@ static void koi (GimpDrawable *drawable, GimpPreview  *preview)
 
 			}
 			else
+//			else if(0)
 			{
 				for (row = 0; row < height; row++)
 				{
