@@ -274,3 +274,37 @@ void * histogram(void *pArg)
     return NULL;
 }
 
+GtkWidget * create_gui()
+{
+	label = gtk_label_new ("Histogram");
+
+	tab_box = gtk_vbox_new (FALSE, 6);
+
+	gtk_container_border_width (GTK_CONTAINER (tab_box), 10);
+	gtk_widget_set_size_request (tab_box, 200, 75);
+	gtk_widget_show (tab_box);
+	//this is the button i want to add to the page
+	histogram_check_button = gtk_check_button_new_with_label ( "Find Micro Histograms");
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(histogram_check_button), FALSE);
+	gtk_widget_show (histogram_check_button);
+	//i add the button to the page
+	gtk_container_add (GTK_CONTAINER (tab_box), histogram_check_button);
+
+
+	histogram_block_size_spinbutton = gimp_spin_button_new (&histogram_block_size_spinbutton_value, gui_options.histogram_block_size, gui_options.histogram_block_size, 40, 4, 4, 4, 4, 0);
+	gtk_container_add (GTK_CONTAINER (tab_box), histogram_block_size_spinbutton);
+	gtk_widget_show (histogram_block_size_spinbutton);
+
+	//  block_size_value = gtk_adjustment_new (90, 0, 256, 1, 1, 1);
+	//  block_size_hscale = gtk_hscale_new (GTK_ADJUSTMENT (block_size_value));
+	//  gtk_scale_set_digits( GTK_SCALE(texture_hscale), 3);
+	////  gtk_range_set_update_policy      (GtkRange      *range,   GtkUpdateType  policy);
+	//  gtk_widget_set_size_request (texture_hscale, 100, 40);
+	//	 gtk_widget_show (texture_hscale);
+
+	gtk_container_add (GTK_CONTAINER (tab_box), texture_hscale);
+
+	//then add the page to the notbook
+
+	return &tab_box;
+}

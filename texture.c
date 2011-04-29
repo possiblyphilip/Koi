@@ -210,6 +210,8 @@ void * texture_highlighter_analyze(JOB_ARG *job)
 
 	int temp = 0;
 
+	print_log("\nLow texture areas\n", temp);
+
 	//####################################
 	for (row = 0; row < job->image.height/2; row++)
 	{
@@ -221,9 +223,9 @@ void * texture_highlighter_analyze(JOB_ARG *job)
 			}
 		}
 	}
-	if(temp / 10000)
+	if(temp > 100000)
 	{
-		print_log("alot of texture loss in the top left - %d fuzzy pixels\n", temp);
+		print_log("a lot of texture loss in the top left - %d fuzzy pixels\n", temp);
 	}
 	else if(temp > 1000)
 	{
@@ -246,9 +248,9 @@ void * texture_highlighter_analyze(JOB_ARG *job)
 			}
 		}
 	}
-	if(temp / 10000)
+	if(temp > 100000)
 	{
-		print_log("alot of texture loss in the bottom left - %d fuzzy pixels\n", temp);
+		print_log("a lot of texture loss in the bottom left - %d fuzzy pixels\n", temp);
 	}
 	else if(temp > 1000)
 	{
@@ -270,9 +272,9 @@ void * texture_highlighter_analyze(JOB_ARG *job)
 			}
 		}
 	}
-	if(temp / 10000)
+	if(temp > 100000)
 	{
-		print_log("alot of texture loss in the top right- %d fuzzy pixels\n", temp);
+		print_log("a lot of texture loss in the top right- %d fuzzy pixels\n", temp);
 	}
 	else if(temp > 1000)
 	{
@@ -295,9 +297,9 @@ void * texture_highlighter_analyze(JOB_ARG *job)
 			}
 		}
 	}
-	if(temp / 10000)
+	if(temp > 100000)
 	{
-		print_log("alot of texture loss in the bottom right - %d fuzzy pixels\n", temp);
+		print_log("a lot of texture loss in the bottom right - %d fuzzy pixels\n", temp);
 	}
 	else if(temp > 1000)
 	{

@@ -19,7 +19,7 @@
 #include "Koi.h"
 #include"jpeg_compress.h"
 
-float jpeg_compress = .99;
+float jpeg_compress = .96;
 int jpeg_threshold = 60;
 
 #define SLEEP_TIME 2
@@ -57,11 +57,11 @@ void * jpeg_highlighter_algorithm(JOB_ARG *job)
 		gimp_progress_set_text("waiting for jpeg save\n");
 
 		gimp_run_procedure("file-jpeg-save",&num_return_vals, GIMP_PDB_INT32, mode, GIMP_PDB_IMAGE, job->image_id , GIMP_PDB_DRAWABLE, job->drawable->drawable_id, GIMP_PDB_STRING, temp_file_name, GIMP_PDB_STRING, "temp", GIMP_PDB_FLOAT, jpeg_compress, GIMP_PDB_FLOAT, 0.0, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 0, GIMP_PDB_STRING,"created with Koi", GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 1, GIMP_PDB_INT32, 0, GIMP_PDB_INT32, 1, GIMP_PDB_END);
-		for(ii = 0; ii < SLEEP_TIME; ii++)
-		{
-			job->progress = ((float)ii/SLEEP_TIME) * 4;
+//		for(ii = 0; ii < SLEEP_TIME; ii++)
+//		{
+//			job->progress = ((float)ii/SLEEP_TIME) * 4;
 			sleep(1);
-		}
+//		}
 
 
 
@@ -109,6 +109,22 @@ void * jpeg_highlighter_algorithm(JOB_ARG *job)
 //
 //		gimp_threshold(job->drawable->drawable_id, jpeg_threshold,255 );
 //		printf("threshold\n");
+
+//			if(! gimp_drawable_has_alpha (job->drawable->drawable_id))
+//			{
+//				 /* some filtermacros do not work with layer that do not have an alpha channel
+//				 * and cause gimp to fail on attempt to call gimp_pixel_rgn_init
+//				  * with both dirty and shadow flag set to TRUE
+//				  * in this situation GIMP displays the error message
+//				  *    "expected tile ack and received: 5"
+//				  *    and causes the called plug-in to exit immediate without success
+//				  * Therfore always add an alpha channel before calling a filtermacro.
+//				  */
+//				  gimp_layer_add_alpha(layer);
+//				  printf("adding alpha channel\n");
+//		   }
+
+		remove(temp_file_name);
 
 		sleep(1);
 
@@ -218,6 +234,13 @@ void * jpeg_highlighter_analyze(JOB_ARG *job)
 	int ii, jj, kk;
 	int row;
 	int col;
+
+	long long red_sum = 0;
+	long long green_sum = 0;
+	long long blue_sum = 0;
+
+	guchar max_pixel_color[4];
+
 	union
 	{
 		guchar pixel[4];
@@ -226,7 +249,15 @@ void * jpeg_highlighter_analyze(JOB_ARG *job)
 
 	gint32 layer_id;
 	int temp = 0;
+	int unique_compressed_colors = 0;
+	int unique_original_colors = 0;
+
 	int *histogram;
+
+	max_pixel_color[0] = 0;
+	max_pixel_color[1] = 0;
+	max_pixel_color[2] = 0;
+	max_pixel_color[3] = 0;
 
 	histogram = (int*)malloc(sizeof(int)*255*255*255);
 //
@@ -278,9 +309,19 @@ GimpPixelRgn rgn_in;
 			job->array_out[col][row].green = stuff.pixel[1];
 			job->array_out[col][row].blue = stuff.pixel[2];
 
+			red_sum += stuff.pixel[0];
+			green_sum += stuff.pixel[1];
+			blue_sum += stuff.pixel[2];
+
 			stuff.pixel[3] = 0;
-//			printf("%d ", stuff.value);
-//			printf("%x %x %x %x\n", stuff.pixel[0], stuff.pixel[1], stuff.pixel[2], stuff.value);
+
+			if(stuff.pixel[0] + stuff.pixel[1]+ stuff.pixel[2] > max_pixel_color[0] +  max_pixel_color[1] +  max_pixel_color[2] )
+			{
+				max_pixel_color[0] = stuff.pixel[0];
+				max_pixel_color[1] = stuff.pixel[1];
+				max_pixel_color[2] = stuff.pixel[2];
+			}
+
 			histogram[stuff.value]++;
 
 		}
@@ -296,15 +337,51 @@ GimpPixelRgn rgn_in;
 	{	
 		if(histogram[ii] != 0)
 		{
-			temp++;
+			unique_compressed_colors++;
+		}
+	}
+
+	//doing the original
+
+	printf("zeroed array\n");
+
+	for(ii = 0; ii < 255*255*255; ii++)
+	{
+		histogram[ii] = 0;
+	}
+
+
+	for (row = 0; row < job->image.height; row++)
+	{
+		for (col = 0; col < job->image.width; col++)
+		{
+			stuff.pixel[0] = job->array_in[col][row].red;
+			stuff.pixel[1] = job->array_in[col][row].green;
+			stuff.pixel[2] = job->array_in[col][row].blue;
+
+			stuff.pixel[3] = 0;
+
+			histogram[stuff.value]++;
+
+		}
+	}
+
+	for(ii = 0; ii < 255*255*255; ii++)
+	{
+		if(histogram[ii] != 0)
+		{
+			unique_original_colors++;
 		}
 	}
 
 	free(histogram);
 
-	print_log("unique colors:%d\n",temp);
-//	print_log("dont know how to analyze jpeg output currently\n");
-
+	print_log("\nJpeg compression difference\n",temp);
+	print_log("unique colors in original image:%d\n",unique_original_colors);
+	print_log("unique colors in compressed image:%d\n",unique_compressed_colors);
+	print_log("ratio: %f\n",(double)unique_original_colors/unique_compressed_colors);
+	print_log("brightest compressed color %d %d %d\n",max_pixel_color[0], max_pixel_color[1], max_pixel_color[2]);
+	print_log("avg compressed color %f %f %f\n",(float)red_sum/(job->image.height*job->image.width), (float)green_sum/(job->image.height*job->image.width),(float)blue_sum/(job->image.height*job->image.width));
 }
 
 void create_jpeg_plugin()

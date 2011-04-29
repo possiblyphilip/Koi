@@ -262,7 +262,7 @@ void * grain_highlighter_analyze(JOB_ARG *job)
 		}
 	}
 
-	print_log("dont know what to do with the grain just yet\n", temp);
+	print_log("\n\ndont know what to do with the grain just yet\n", temp);
 
 }
 

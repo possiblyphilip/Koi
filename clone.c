@@ -18,8 +18,8 @@
 
 #include "clone.h"
 #include "Koi.h"
-
-#define SEARCH_DEPTH 1
+#include "laplace.c"
+#define SEARCH_DEPTH 4
 
 pthread_cond_t      clone_cond  = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t     clone_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -63,6 +63,7 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 	int max_job_block;
 	int job_blocks;
 	int temp = 0;
+	int temp_texture = 0;
 	int from_row, from_col;
 	int num_blocks;
 	int ii;
@@ -128,6 +129,7 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 
 
 
+
 //this should put the counter at the right place for each thread so each thread works on filling up its little slice of the array
 	ii = job->image.height*job->image.width*(job->thread/(double)NUM_THREADS);
 
@@ -144,6 +146,18 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 	{
 		max_col = (job->width*NUM_THREADS) - block_size;
 	}
+
+	laplace(job);
+
+			for (from_row = 0; from_row < job->height; from_row++)
+			{
+				for (from_col = job->start_colum; from_col < max_col; from_col++)
+				{
+					job->array_out[from_col][from_row].red = 0;
+					job->array_out[from_col][from_row].green = 0;
+
+				}
+			}
 
 
 	//me happy double nested loops
@@ -170,57 +184,6 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 					block_metric_array[ii].metric += job->array_in[from_col+block_col][from_row+block_row].red;
 					block_metric_array[ii].metric += job->array_in[from_col+block_col][from_row+block_row].green;
 					block_metric_array[ii].metric += job->array_in[from_col+block_col][from_row+block_row].blue;
-
-
-					//
-					//			    red = job->array_in[from_col+block_col][from_row+block_row].red;
-					//			    green = job->array_in[from_col+block_col][from_row+block_row].green;
-					//			    blue = job->array_in[from_col+block_col][from_row+block_row].blue;
-					//
-					//
-					//
-					//			//    (red-blue)/255
-					//
-					////				    blue/255
-					//
-					//
-					//			    if(red > max)
-					//			    {
-					//				max = red;
-					//			    }
-					//
-					//			    if(green > max)
-					//			    {
-					//				max = green;
-					//			    }
-					//
-					//			    if(blue > max)
-					//			    {
-					//				max = blue;
-					//			    }
-					//			//min
-					//			    if(red < min)
-					//			    {
-					//				min = red;
-					//			    }
-					//			    if(green < min)
-					//			    {
-					//				min = green;
-					//			    }
-					//			    if(blue < min)
-					//			    {
-					//				min = blue;
-					//			    }
-					//
-					//
-					//	//		    block_metric_array[ii].metric += green;
-					//			//	block_metric_array[ii].metric += 1;
-					//
-					//			    hsl = RGBtoHSL(red, green, blue);
-					//
-					//			    block_metric_array[ii].h_metric += hsl.h;
-					//			    block_metric_array[ii].s_metric += hsl.s;
-					//			    block_metric_array[ii].l_metric += hsl.l;
 
 				}
 			}
@@ -274,67 +237,9 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 
 
 
-//	//copying the original to my output so i can have the original image as my output image with the blocks written over it
-//		for (from_row = 0; from_row < job->height; from_row++)
-//		{
-//			for (from_col = job->start_colum; from_col < max_col; from_col++)
-//			{
-//				job->array_out[from_col][from_row].red = job->array_in[from_col][from_row].red;
-//				job->array_out[from_col][from_row].green = job->array_in[from_col][from_row].green;
-//				job->array_out[from_col][from_row].blue = job->array_in[from_col][from_row].blue;
-//			}
-//		}
 
-//	//edge find the image
-//		for (from_row = 0; from_row < job->height ; from_row++)
-//		{
-//			for (from_col = job->start_colum+1; from_col < job->start_colum+job->width; from_col++)
-//			{
-//				job->array_in[from_col][from_row].red = abs(job->array_out[from_col][from_row].red - job->array_out[from_col-1][from_row].red);
-//			}
-//		}
-//
-////		threshold the image by blocks
-//		for (from_row = 0; from_row < job->height-block_size ; from_row+=block_size)
-//		{
-//			for (from_col = job->start_colum; from_col < max_col; from_col+=block_size)
-//			{
-//				temp = 0;
-//				//loop through the block
-//				for (block_row = 0; block_row < block_size; block_row++)
-//				{
-//					for (block_col = 0; block_col < block_size; block_col++)
-//					{
-//
-//
-//						temp += job->array_in[from_col+block_col][from_row+block_row].red;
-//					}
-//				}
-////if its got enough texture ill write it white
-//				if(temp >= block_size*block_size)
-//				{
-//					for (block_row = 0; block_row < block_size; block_row++)
-//					{
-//						for (block_col = 0; block_col < block_size; block_col++)
-//						{
-//							job->array_in[from_col+block_col][from_row+block_row].red = 255;
-//						}
-//					}
-//
-//				}
-////if not enough texture ill write it black
-//				else
-//				{
-//					for (block_row = 0; block_row < block_size; block_row++)
-//					{
-//						for (block_col = 0; block_col < block_size; block_col++)
-//						{
-//							job->array_in[from_col+block_col][from_row+block_row].red = 0;
-//						}
-//					}
-//				}
-//			}
-//		}
+
+
 
 
 
@@ -371,6 +276,7 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 					{
 
 						temp = 0;
+						temp_texture = 0;
 						//subtracts the two blocks to see if they go to zero (perfect match)
 						for (block_row = 0; block_row < block_size ; block_row++)
 						{
@@ -378,11 +284,21 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 							{
 
 								temp += abs(job->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].green - job->array_in[ block_metric_array[ii-offset].col+block_col][block_metric_array[ii-offset].row+block_row].green);
-
+								temp_texture += job->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].blue;
 							}
 						}
+
+//						if( temp_texture < block_size*block_size)
+//						{
+//							temp_texture = 0;
+//						}
+//						else
+//						{
+//							temp_texture = 1;
+//						}
+
 						//if the block matches close enough i let it through
-						if(temp <= block_size*block_size)
+						if(temp < block_size*block_size && temp_texture > block_size*block_size*20)
 						{
 							//highlighting the blocks that match
 							for (block_row = 0; block_row < block_size ; block_row++)
@@ -390,17 +306,9 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 								for (block_col = 0; block_col < block_size; block_col++)
 								{
 
-//									job->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].red = 50;
-//									job->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].green = 190;
-//									job->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].blue = 170;
-//
-//									job->array_out[ block_metric_array[ii-offset].col+block_col][block_metric_array[ii-offset].row+block_row].red = 255;
-//									job->array_out[ block_metric_array[ii-offset].col+block_col][block_metric_array[ii-offset].row+block_row].green = 115;
-//									job->array_out[ block_metric_array[ii-offset].col+block_col][block_metric_array[ii-offset].row+block_row].blue = 0;
-
 									job->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].red = job->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].red;
 									job->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].green = job->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].green;
-									job->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].blue =job->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].blue;
+									job->array_out[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].blue = job->array_in[block_metric_array[ii].col+block_col][ block_metric_array[ii].row+block_row].blue;
 
 									job->array_out[ block_metric_array[ii-offset].col+block_col][block_metric_array[ii-offset].row+block_row].red = job->array_in[ block_metric_array[ii-offset].col+block_col][block_metric_array[ii-offset].row+block_row].red;
 									job->array_out[ block_metric_array[ii-offset].col+block_col][block_metric_array[ii-offset].row+block_row].green = job->array_in[ block_metric_array[ii-offset].col+block_col][block_metric_array[ii-offset].row+block_row].green;
@@ -408,10 +316,8 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 
 								}
 							}
-						}
-
+						}			
 					}
-
 				}
 			}
 		}
@@ -420,22 +326,17 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 
 	}
 
-
-	//wipe out any cloneing found in non textured areas
-
 	for (from_row = 0; from_row < job->height; from_row++)
 	{
 		for (from_col = job->start_colum; from_col < max_col; from_col++)
 		{
-			if(job->array_in[from_col][from_row].red == 0)
+			if(job->array_out[from_col][from_row].red == 0 && job->array_out[from_col][from_row].green == 0)
 			{
-				job->array_out[from_col][from_row].red = 0;
-				job->array_out[from_col][from_row].green = 0;
-				job->array_out[from_col][from_row].blue = 0;
+			job->array_out[from_col][from_row].blue = 0;
 			}
+
 		}
 	}
-
 
 	pthread_mutex_lock(&clone_mutex);
 	clone_wait_var++;
@@ -626,7 +527,7 @@ void * clone_highlighter_analyze(JOB_ARG *job)
 	int temp = 0;
 
 
-
+	print_log("\nCloning\n", temp);
 
 
 	//####################################
@@ -640,7 +541,7 @@ void * clone_highlighter_analyze(JOB_ARG *job)
 			}
 		}
 	}
-	if(temp / 10000)
+	if(temp > 100000)
 	{
 		print_log("alot of cloning in the top left - %d cloned pixels\n", temp);
 	}
@@ -665,7 +566,7 @@ void * clone_highlighter_analyze(JOB_ARG *job)
 			}
 		}
 	}
-	if(temp / 10000)
+	if(temp > 100000)
 	{
 		print_log("alot of cloning in the bottom left - %d cloned pixels\n", temp);
 	}
@@ -689,7 +590,7 @@ void * clone_highlighter_analyze(JOB_ARG *job)
 			}
 		}
 	}
-	if(temp / 10000)
+	if(temp > 100000)
 	{
 		print_log("alot of cloning in the top right- %d cloned pixels\n", temp);
 	}
@@ -714,7 +615,7 @@ void * clone_highlighter_analyze(JOB_ARG *job)
 			}
 		}
 	}
-	if(temp / 10000)
+	if(temp > 100000)
 	{
 		print_log("alot of cloning in the bottom right - %d cloned pixels\n", temp);
 	}
