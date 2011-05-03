@@ -223,11 +223,11 @@ void * texture_highlighter_analyze(JOB_ARG *job)
 			}
 		}
 	}
-	if(temp > 100000)
+	if(temp > .005 * (job->image.height * job->image.width))
 	{
 		print_log("a lot of texture loss in the top left - %d fuzzy pixels\n", temp);
 	}
-	else if(temp > 1000)
+	else if(temp > .001 * (job->image.height * job->image.width))
 	{
 		print_log("some texture loss in the top left\n");
 	}
@@ -248,11 +248,11 @@ void * texture_highlighter_analyze(JOB_ARG *job)
 			}
 		}
 	}
-	if(temp > 100000)
+	if(temp > .005 * (job->image.height * job->image.width))
 	{
 		print_log("a lot of texture loss in the bottom left - %d fuzzy pixels\n", temp);
 	}
-	else if(temp > 1000)
+	else if(temp > .001 * (job->image.height * job->image.width))
 	{
 		print_log("some texture loss in the bottom left\n");
 	}
@@ -272,11 +272,11 @@ void * texture_highlighter_analyze(JOB_ARG *job)
 			}
 		}
 	}
-	if(temp > 100000)
+	if(temp > .005 * (job->image.height * job->image.width))
 	{
 		print_log("a lot of texture loss in the top right- %d fuzzy pixels\n", temp);
 	}
-	else if(temp > 1000)
+	else if(temp > .001 * (job->image.height * job->image.width))
 	{
 		print_log("some texture loss in the top right\n");
 	}
@@ -297,11 +297,11 @@ void * texture_highlighter_analyze(JOB_ARG *job)
 			}
 		}
 	}
-	if(temp > 100000)
+	if(temp > .005 * (job->image.height * job->image.width))
 	{
 		print_log("a lot of texture loss in the bottom right - %d fuzzy pixels\n", temp);
 	}
-	else if(temp > 1000)
+	else if(temp > .001 * (job->image.height * job->image.width))
 	{
 		print_log("some texture loss in the bottom right\n");
 	}

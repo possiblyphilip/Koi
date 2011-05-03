@@ -135,19 +135,12 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 
 	printf("thread %d index start = %d\n", job->thread, ii);
 
-	//this snipit should let the colums blend in the middle of the image without writing over the edge of the image
-	//basically this allows each thread to read the other threads data so there are not gaps between
-	//the work each thread does
-	if(job->start_colum+job->width+block_size < job->width* NUM_THREADS)
-	{
-		max_col = job->start_colum+job->width;
-	}
-	else
-	{
-		max_col = (job->width*NUM_THREADS) - block_size;
-	}
+
 
 	laplace(job);
+
+		max_col = job->start_colum+job->width;
+
 
 			for (from_row = 0; from_row < job->height; from_row++)
 			{
@@ -157,6 +150,18 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 					job->array_out[from_col][from_row].green = 0;
 
 				}
+			}
+
+			//this snipit should let the colums blend in the middle of the image without writing over the edge of the image
+			//basically this allows each thread to read the other threads data so there are not gaps between
+			//the work each thread does
+			if(job->start_colum+job->width+block_size < job->width* NUM_THREADS)
+			{
+				max_col = job->start_colum+job->width;
+			}
+			else
+			{
+				max_col = (job->width*NUM_THREADS) - block_size;
 			}
 
 
@@ -325,6 +330,9 @@ void * clone_highlighter_algorithm(JOB_ARG *job)
 		job->progress = ((ii+job_blocks)-max_job_block)/ (double)(job_blocks*2) + .5;
 
 	}
+
+	max_col = job->start_colum+job->width;
+
 
 	for (from_row = 0; from_row < job->height; from_row++)
 	{
@@ -541,13 +549,13 @@ void * clone_highlighter_analyze(JOB_ARG *job)
 			}
 		}
 	}
-	if(temp > 100000)
+	if(temp > .005 * (job->image.height * job->image.width))
 	{
 		print_log("alot of cloning in the top left - %d cloned pixels\n", temp);
 	}
-	else if(temp > 1000)
+	else if(temp > .001 * (job->image.height * job->image.width))
 	{
-		print_log("some cloning in the top left\n");
+		print_log("some cloning in the top left. %d cloned pixels\n", temp);
 	}
 	else
 	{
@@ -566,13 +574,13 @@ void * clone_highlighter_analyze(JOB_ARG *job)
 			}
 		}
 	}
-	if(temp > 100000)
+	if(temp > .005 * (job->image.height * job->image.width))
 	{
 		print_log("alot of cloning in the bottom left - %d cloned pixels\n", temp);
 	}
-	else if(temp > 1000)
+	else if(temp > .001 * (job->image.height * job->image.width))
 	{
-		print_log("some cloning in the bottom left\n");
+		print_log("some cloning in the bottom left. %d cloned pixels\n", temp);
 	}
 	else
 	{
@@ -590,13 +598,13 @@ void * clone_highlighter_analyze(JOB_ARG *job)
 			}
 		}
 	}
-	if(temp > 100000)
+	if(temp > .005 * (job->image.height * job->image.width))
 	{
 		print_log("alot of cloning in the top right- %d cloned pixels\n", temp);
 	}
-	else if(temp > 1000)
+	else if(temp > .001 * (job->image.height * job->image.width))
 	{
-		print_log("some cloning in the top right\n");
+		print_log("some cloning in the top right. %d cloned pixels\n", temp);
 	}
 	else
 	{
@@ -615,13 +623,13 @@ void * clone_highlighter_analyze(JOB_ARG *job)
 			}
 		}
 	}
-	if(temp > 100000)
+	if(temp > .005 * (job->image.height * job->image.width))
 	{
 		print_log("alot of cloning in the bottom right - %d cloned pixels\n", temp);
 	}
-	else if(temp > 1000)
+	else if(temp > .001 * (job->image.height * job->image.width))
 	{
-		print_log("some cloning in the bottom right\n");
+		print_log("some cloning in the bottom right. %d cloned pixels\n", temp);
 	}
 	else
 	{
